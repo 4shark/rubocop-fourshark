@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe RuboCop::Cop::Layout::MultiLineBlockSpacing, :config do
+RSpec.describe RuboCop::Cop::Layout::MultilineStatementSpacing, :config do
   it 'registers an offense when a single-line statement follows a multi-line one without a blank' do
     expect_offense(<<~RUBY)
       foo(

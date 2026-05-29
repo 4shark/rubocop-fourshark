@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe RuboCop::Cop::Rails::AlphabeticalMacros, :config do
+RSpec.describe RuboCop::Cop::Rails::OrderedMacros, :config do
   it 'registers an offense for unsorted validations' do
     expect_offense(<<~RUBY)
       class User < ApplicationRecord

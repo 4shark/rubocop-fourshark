@@ -15,7 +15,7 @@ module RuboCop
       # - Associations marked as polymorphic or through are ignored.
       # - Non-ActiveRecord classes are ignored.
       #
-      class AssociationInverseOf < ::RuboCop::Cop::Base
+      class InverseOfMatcher < ::RuboCop::Cop::Base
         MSG_MISSING_INVERSE   = 'Root models must include `.inverse_of` in association specs.'
         MSG_FORBIDDEN_INVERSE = 'Subclasses must NOT include `.inverse_of` in specs (it belongs to the parent).'
 
@@ -51,7 +51,7 @@ module RuboCop
               'unknown'
             end
 
-          warn "RSpec/AssociationInverseOf failed on #{source_name}: #{e.message}"
+          warn "RSpec/InverseOfMatcher failed on #{source_name}: #{e.message}"
         end
 
         private

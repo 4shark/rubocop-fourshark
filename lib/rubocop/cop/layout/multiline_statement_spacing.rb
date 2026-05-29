@@ -27,7 +27,7 @@ module RuboCop
       #
       #   baz
       #
-      class MultiLineBlockSpacing < ::RuboCop::Cop::Base
+      class MultilineStatementSpacing < ::RuboCop::Cop::Base
         MSG = 'Add a blank line around multi-line statements.'
 
         def on_begin(node)

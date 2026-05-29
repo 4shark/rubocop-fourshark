@@ -40,42 +40,58 @@ Activating the plugin auto-loads the gem's `config/default.yml`, which enables e
 
 All cops are **enabled by default** the moment the plugin is activated. Cops scoped to a path (models, specs, factories) only run on files matching that path. Each cop's source file under [`lib/rubocop/cop`](lib/rubocop/cop) carries runnable `@example` blocks showing the bad/good shapes.
 
+### Naming
+
+Cop names follow RuboCop's empirical convention — a noun phrase describing the construct or smell, no `Disallow*`/`No*` prefixes — with two deliberate exceptions:
+
+- **`Style/DisallowSafeNavigation` / `Style/DisallowTry`** keep the `Disallow*` prefix. RuboCop has no idiom for "forbid a construct it otherwise permits" (it uses `EnforcedStyle` on one cop), and the natural noun name is already taken by a stock cop with the *opposite* intent — `Style/SafeNavigation` *converts to* `&.`. `Disallow*` is unambiguous and collision-free.
+- **`Rails/MandatoryInverseOf`** is named to distinguish it from stock `Rails/InverseOf`, which only flags associations where Active Record cannot auto-detect the inverse. Ours mandates `inverse_of` on *every* association — a strict superset — so the gem disables the stock cop (below).
+
+### Stock cops disabled
+
+Where a 4Shark cop supersedes or contradicts a stock cop, `config/default.yml` turns the stock one off:
+
+| Disabled stock cop | Why |
+|---|---|
+| `Rails/InverseOf` | superseded by `Rails/MandatoryInverseOf` (covers its cases and more) |
+| `Style/SafeNavigation` | contradicts `Style/DisallowSafeNavigation` — it pushes `&.`, we forbid it |
+
 ### Style
 
 | Cop | Intent |
 |---|---|
 | `Style/DisallowSafeNavigation` | Flags safe navigation (`&.`). 4Shark rejects it — a `&.` chain silently swallows a `nil` that usually signals a real bug. Use an explicit conditional so the `nil` case is handled on purpose. |
-| `Style/DisallowTry` | Flags `try` / `try!`. Same rationale as safe navigation — it hides the `nil`/missing-method case instead of handling it explicitly. |
+| `Style/DisallowTry` | Flags `try` / `try!`. Same rationale — it hides the `nil`/missing-method case instead of handling it explicitly. |
 
 ### Layout
 
 | Cop | Intent |
 |---|---|
-| `Layout/MultiLineBlockSpacing` | Requires a blank line between two consecutive statements when either spans multiple lines, so multi-line statements read as distinct blocks. |
+| `Layout/MultilineStatementSpacing` | Requires a blank line between two consecutive statements when either spans multiple lines, so multi-line statements read as distinct units. |
 
 ### Rails (models)
 
 | Cop | Intent |
 |---|---|
-| `Rails/AssociationInverseOf` | Every association (`belongs_to`/`has_many`/`has_one`) must declare `inverse_of`, so both sides resolve to the same in-memory object. Scoped to `app/models`. |
-| `Rails/BidirectionalAssociations` | An association must be declared on both sides of the relationship — the opposite model must carry the matching association. Scoped to `app/models`. |
-| `Rails/OptionalBelongsTo` | `belongs_to` must be `optional: true` with manual `validates :x_id, presence: true`, skipping the per-record existence `SELECT` that Rails adds by default. Scoped to `app/models`. |
-| `Rails/AlphabeticalMacros` | Same-kind class macros (associations, validations, scopes) must be sorted alphabetically within their group. Scoped to `app/models`. |
+| `Rails/MandatoryInverseOf` | Every association (`belongs_to`/`has_many`/`has_one`) must declare `inverse_of`, so both sides resolve to the same in-memory object. Stricter than stock `Rails/InverseOf`, which only fires when AR can't auto-detect the inverse. Scoped to `app/models`. |
+| `Rails/BidirectionalAssociation` | An association must be declared on both sides of the relationship — the opposite model must carry the matching association. Scoped to `app/models`. |
+| `Rails/OptionalBelongsTo` | `belongs_to` must be `optional: true` (see the rationale below). Scoped to `app/models`. |
+| `Rails/OrderedMacros` | Same-kind class macros (associations, validations, scopes) must be sorted alphabetically within their group. Scoped to `app/models`. |
 
 ### RSpec (specs)
 
 | Cop | Intent |
 |---|---|
-| `RSpec/AssociationInverseOf` | Root models must assert `.inverse_of` in association specs; subclasses must not. Scoped to `spec/models`. |
-| `RSpec/LetNotInContext` | `let` is declared at the top level of the example group, not inside a `context`. Keeps setup visible and avoids context-local surprises. |
-| `RSpec/NoConditionalInLet` | A `let` must not contain conditional logic — branch with separate `context`s instead of an `if` inside the memoized helper. |
-| `RSpec/NoFactoryBotInBefore` | Object creation belongs in `let`, not `before`. `before` is for actions, not for building the subjects under test. |
+| `RSpec/InverseOfMatcher` | Root models must assert `.inverse_of` in association specs; subclasses must not (it belongs to the parent). Scoped to `spec/models`. |
+| `RSpec/OverwrittenLet` | A `let`/`let!` must not override one defined in an outer example group — shadowing makes it ambiguous which value applies. Scenario-specific `let`s, and the same name across sibling contexts, are fine. |
+| `RSpec/ConditionalInLet` | A `let` must not contain conditional logic (`if`/`case`) — branch with separate `context`s instead. Ternaries are allowed. |
+| `RSpec/FactoryBotInBefore` | Object creation belongs in `let`, not `before`. `before` is for actions, not for building the subjects under test. |
 
 ### FactoryBot (factories)
 
 | Cop | Intent |
 |---|---|
-| `FactoryBot/NoAssociationsInFactory` | No associations declared inside a factory — they trigger cascading object creation and callbacks. Set the association manually in the spec. Scoped to `spec/factories`. |
+| `FactoryBot/AssociationInFactory` | No associations declared inside a factory — they trigger cascading object creation and callbacks. Set the association manually in the spec. Scoped to `spec/factories`. |
 
 The full rationale behind each convention (the "why this is good 4Shark code") lives in the team's engineering docs; this README states the intent each cop enforces. One convention deviates from a safe Rails default and is worth spelling out — see below.
 

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe RuboCop::Cop::FactoryBot::NoAssociationsInFactory, :config do
+RSpec.describe RuboCop::Cop::FactoryBot::AssociationInFactory, :config do
   it 'registers an offense for a bare association in a factory' do
     expect_offense(<<~RUBY)
       factory :payment do
