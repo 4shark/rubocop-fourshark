@@ -22,7 +22,7 @@ module RuboCop
       #     amount { 100.0 }
       #   end
       #
-      class NoAssociationsInFactory < ::RuboCop::Cop::Base
+      class AssociationInFactory < ::RuboCop::Cop::Base
         MSG = 'Do not declare associations in factories — set them manually in the spec.'
 
         CONTAINER_METHODS = %i[factory trait].freeze

@@ -25,7 +25,7 @@ module RuboCop
       #     has_many :posts, inverse_of: :user
       #   end
       #
-      class BidirectionalAssociations < ::RuboCop::Cop::Base
+      class BidirectionalAssociation < ::RuboCop::Cop::Base
         MSG = 'Associations must be declared on both sides of the relationship.'
 
         def self.default_configuration
@@ -66,7 +66,7 @@ module RuboCop
               'unknown'
             end
 
-          warn "Rails/BidirectionalAssociations failed on #{source_name}: #{e.message}"
+          warn "Rails/BidirectionalAssociation failed on #{source_name}: #{e.message}"
         end
 
         private

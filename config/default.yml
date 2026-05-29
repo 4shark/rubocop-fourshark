@@ -1,12 +1,12 @@
 # rubocop-fourshark — custom cops (4Shark conventions).
-# Cops live in their natural stock departments (Style/Rails/RSpec) so the
-# names read like any other cop. Stock-cop settings shared across repos will
-# be added here in a later phase.
+# Cops live in their natural stock departments (Style/Rails/RSpec/Layout/FactoryBot)
+# so the names read like any other cop. Where a 4Shark cop supersedes or
+# contradicts a stock cop, the stock cop is disabled here (see the bottom block).
 
-Layout/MultiLineBlockSpacing:
+Layout/MultilineStatementSpacing:
   Description: 'Add a blank line between consecutive statements when either spans multiple lines.'
   Enabled: true
-  VersionAdded: '0.1.0'
+  VersionAdded: '0.2.0'
 
 Style/DisallowSafeNavigation:
   Description: 'Do not use safe navigation (`&.`). Use explicit conditionals instead.'
@@ -18,30 +18,23 @@ Style/DisallowTry:
   Enabled: true
   VersionAdded: '0.1.0'
 
-Rails/AlphabeticalMacros:
-  Description: 'Sort same-kind class macro declarations (associations, validations, scopes) alphabetically.'
-  Enabled: true
-  Include:
-    - 'app/models/**/*.rb'
-  VersionAdded: '0.1.0'
-
-Rails/AssociationInverseOf:
-  Description: 'All associations must declare `inverse_of`.'
+Rails/MandatoryInverseOf:
+  Description: 'Every association must declare `inverse_of` (stricter than stock `Rails/InverseOf`).'
   Enabled: true
   Include:
     - 'app/models/**/*.rb'
   Exclude:
     - 'app/serializers/**/*.rb'
-  VersionAdded: '0.1.0'
+  VersionAdded: '0.2.0'
 
-Rails/BidirectionalAssociations:
+Rails/BidirectionalAssociation:
   Description: 'Associations must be declared on both sides of the relationship.'
   Enabled: true
   Include:
     - 'app/models/**/*.rb'
   Exclude:
     - 'app/serializers/**/*.rb'
-  VersionAdded: '0.1.0'
+  VersionAdded: '0.2.0'
 
 Rails/OptionalBelongsTo:
   Description: 'Declare `belongs_to` with `optional: true` and validate presence manually.'
@@ -50,37 +43,54 @@ Rails/OptionalBelongsTo:
     - 'app/models/**/*.rb'
   VersionAdded: '0.1.0'
 
-RSpec/AssociationInverseOf:
+Rails/OrderedMacros:
+  Description: 'Sort same-kind class macro declarations (associations, validations, scopes) alphabetically.'
+  Enabled: true
+  Include:
+    - 'app/models/**/*.rb'
+  VersionAdded: '0.2.0'
+
+RSpec/InverseOfMatcher:
   Description: 'Root models must include `.inverse_of` in association specs; subclasses must not.'
   Enabled: true
   Include:
     - 'spec/models/**/*_spec.rb'
-  VersionAdded: '0.1.0'
+  VersionAdded: '0.2.0'
 
-RSpec/LetNotInContext:
-  Description: 'Declare `let` at the top level, not inside a `context`.'
+RSpec/OverwrittenLet:
+  Description: 'Do not override a `let` defined in an outer example group.'
   Enabled: true
   Include:
     - 'spec/**/*_spec.rb'
-  VersionAdded: '0.1.0'
+  VersionAdded: '0.2.0'
 
-RSpec/NoConditionalInLet:
+RSpec/ConditionalInLet:
   Description: 'Do not put conditional logic in a `let` — use separate contexts.'
   Enabled: true
   Include:
     - 'spec/**/*_spec.rb'
-  VersionAdded: '0.1.0'
+  VersionAdded: '0.2.0'
 
-RSpec/NoFactoryBotInBefore:
+RSpec/FactoryBotInBefore:
   Description: 'Do not create objects in `before` — use `let` for object creation.'
   Enabled: true
   Include:
     - 'spec/**/*_spec.rb'
-  VersionAdded: '0.1.0'
+  VersionAdded: '0.2.0'
 
-FactoryBot/NoAssociationsInFactory:
+FactoryBot/AssociationInFactory:
   Description: 'Do not declare associations in factories — set them manually in the spec.'
   Enabled: true
   Include:
     - 'spec/factories/**/*.rb'
-  VersionAdded: '0.1.0'
+  VersionAdded: '0.2.0'
+
+# Stock cops disabled because a 4Shark cop supersedes or contradicts them.
+# `Rails/InverseOf` only flags when AR can't auto-detect the inverse;
+# `Rails/MandatoryInverseOf` covers it and more.
+# `Style/SafeNavigation` converts to `&.`, the opposite of `Style/DisallowSafeNavigation`.
+Rails/InverseOf:
+  Enabled: false
+
+Style/SafeNavigation:
+  Enabled: false

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe RuboCop::Cop::RSpec::NoFactoryBotInBefore, :config do
+RSpec.describe RuboCop::Cop::RSpec::FactoryBotInBefore, :config do
   it 'registers an offense for create in a before block' do
     expect_offense(<<~RUBY)
       before do

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe RuboCop::Cop::RSpec::NoConditionalInLet, :config do
+RSpec.describe RuboCop::Cop::RSpec::ConditionalInLet, :config do
   it 'registers an offense for an if inside a let' do
     expect_offense(<<~RUBY)
       let(:user) do

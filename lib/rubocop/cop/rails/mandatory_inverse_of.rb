@@ -8,6 +8,11 @@ module RuboCop
       # Ensures that every ActiveRecord association
       # (belongs_to, has_many, has_one) has an `inverse_of` option.
       #
+      # Stricter than the stock `Rails/InverseOf`, which only flags associations
+      # where Active Record cannot auto-detect the inverse. This cop mandates
+      # `inverse_of` on every association. Disable the stock cop when enabling
+      # this one.
+      #
       # @example
       #   # bad
       #   belongs_to :user
@@ -15,7 +20,7 @@ module RuboCop
       #   # good
       #   belongs_to :user, inverse_of: :posts
       #
-      class AssociationInverseOf < ::RuboCop::Cop::Base
+      class MandatoryInverseOf < ::RuboCop::Cop::Base
         MSG = 'All associations must declare `inverse_of`.'
 
         def self.default_configuration
@@ -44,7 +49,7 @@ module RuboCop
               'unknown'
             end
 
-          warn "Rails/AssociationInverseOf failed on #{source_name}: #{e.message}"
+          warn "Rails/MandatoryInverseOf failed on #{source_name}: #{e.message}"
         end
 
         private

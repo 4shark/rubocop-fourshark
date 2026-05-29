@@ -16,7 +16,7 @@ module RuboCop
       #   # good
       #   let(:user) { create(:user) }
       #
-      class NoFactoryBotInBefore < ::RuboCop::Cop::Base
+      class FactoryBotInBefore < ::RuboCop::Cop::Base
         MSG = 'Do not create objects in `before` — use `let` for object creation.'
 
         CREATION_METHODS = %i[create build create_list build_list].freeze
