@@ -1,1 +1,39 @@
-# Write it!
+# rubocop-fourshark — custom cops (4Shark conventions).
+# Cops live in their natural stock departments (Style/Rails/RSpec) so the
+# names read like any other cop. Stock-cop settings shared across repos will
+# be added here in a later phase.
+
+Style/DisallowSafeNavigation:
+  Description: 'Do not use safe navigation (`&.`). Use explicit conditionals instead.'
+  Enabled: true
+  VersionAdded: '0.1.0'
+
+Style/DisallowTry:
+  Description: 'Do not use `try` or `try!`. Use explicit conditionals instead.'
+  Enabled: true
+  VersionAdded: '0.1.0'
+
+Rails/AssociationInverseOf:
+  Description: 'All associations must declare `inverse_of`.'
+  Enabled: true
+  Include:
+    - 'app/models/**/*.rb'
+  Exclude:
+    - 'app/serializers/**/*.rb'
+  VersionAdded: '0.1.0'
+
+Rails/BidirectionalAssociations:
+  Description: 'Associations must be declared on both sides of the relationship.'
+  Enabled: true
+  Include:
+    - 'app/models/**/*.rb'
+  Exclude:
+    - 'app/serializers/**/*.rb'
+  VersionAdded: '0.1.0'
+
+RSpec/AssociationInverseOf:
+  Description: 'Root models must include `.inverse_of` in association specs; subclasses must not.'
+  Enabled: true
+  Include:
+    - 'spec/models/**/*_spec.rb'
+  VersionAdded: '0.1.0'

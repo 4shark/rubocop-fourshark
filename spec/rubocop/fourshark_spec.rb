@@ -1,11 +1,7 @@
 # frozen_string_literal: true
 
-RSpec.describe Rubocop::Fourshark do
-  it "has a version number" do
-    expect(Rubocop::Fourshark::VERSION).not_to be nil
-  end
-
-  it "does something useful" do
-    expect(false).to eq(true)
+RSpec.describe RuboCop::Fourshark do
+  it 'has a version number' do
+    expect(RuboCop::Fourshark::VERSION).not_to be_nil
   end
 end
