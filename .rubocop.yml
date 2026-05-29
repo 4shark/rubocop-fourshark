@@ -5,3 +5,30 @@ plugins:
 Naming/FileName:
   Exclude:
     - lib/rubocop-fourshark.rb
+
+# 4Shark bans safe navigation (enforced by our own Style/DisallowSafeNavigation),
+# so the core cop that *promotes* `&.` is turned off — we dogfood the rule.
+Style/SafeNavigation:
+  Enabled: false
+
+# Class doc-comments are not required: the cop classes are self-describing.
+Style/Documentation:
+  Enabled: false
+
+# The migrated cops are intentionally long/complex (cross-file association
+# analysis); we accept that rather than fragment them to hit default limits.
+Metrics/AbcSize:
+  Enabled: false
+Metrics/ClassLength:
+  Enabled: false
+Metrics/CyclomaticComplexity:
+  Enabled: false
+Metrics/MethodLength:
+  Enabled: false
+Metrics/PerceivedComplexity:
+  Enabled: false
+
+# The association cops handle plain macro `send`s (belongs_to, has_many) that
+# are never called via `&.`; the on_csend coverage check is noise here.
+InternalAffairs/OnSendWithoutOnCSend:
+  Enabled: false

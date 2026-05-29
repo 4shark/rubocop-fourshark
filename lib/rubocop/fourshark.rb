@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "fourshark/version"
+require_relative 'fourshark/version'
 
 module RuboCop
   module Fourshark
