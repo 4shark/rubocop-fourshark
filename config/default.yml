@@ -51,3 +51,31 @@ RSpec/AssociationInverseOf:
   Include:
     - 'spec/models/**/*_spec.rb'
   VersionAdded: '0.1.0'
+
+RSpec/LetNotInContext:
+  Description: 'Declare `let` at the top level, not inside a `context`.'
+  Enabled: true
+  Include:
+    - 'spec/**/*_spec.rb'
+  VersionAdded: '0.1.0'
+
+RSpec/NoConditionalInLet:
+  Description: 'Do not put conditional logic in a `let` — use separate contexts.'
+  Enabled: true
+  Include:
+    - 'spec/**/*_spec.rb'
+  VersionAdded: '0.1.0'
+
+RSpec/NoFactoryBotInBefore:
+  Description: 'Do not create objects in `before` — use `let` for object creation.'
+  Enabled: true
+  Include:
+    - 'spec/**/*_spec.rb'
+  VersionAdded: '0.1.0'
+
+FactoryBot/NoAssociationsInFactory:
+  Description: 'Do not declare associations in factories — set them manually in the spec.'
+  Enabled: true
+  Include:
+    - 'spec/factories/**/*.rb'
+  VersionAdded: '0.1.0'
