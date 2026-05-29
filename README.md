@@ -77,7 +77,20 @@ All cops are **enabled by default** the moment the plugin is activated. Cops sco
 |---|---|
 | `FactoryBot/NoAssociationsInFactory` | No associations declared inside a factory — they trigger cascading object creation and callbacks. Set the association manually in the spec. Scoped to `spec/factories`. |
 
-The full rationale behind each convention (the "why this is good 4Shark code") lives in the team's engineering docs; this README states the intent each cop enforces.
+The full rationale behind each convention (the "why this is good 4Shark code") lives in the team's engineering docs; this README states the intent each cop enforces. One convention deviates from a safe Rails default and is worth spelling out — see below.
+
+### Why `belongs_to` is `optional: true` by default
+
+4Shark never exposes internal database IDs across its API and upload boundaries. Clients send their **own** identifiers; each external identifier is mapped to its internal record (a surrogate-key cross-reference), and that lookup is scoped to the client's account — so it confirms both that the record **exists** and that it **belongs to the caller**, in a single step.
+
+By the time an association is assigned, existence and ownership have already been verified — more strictly than Rails would. Rails' default `belongs_to` (`optional: false`) then adds an existence `SELECT` per record on top of that: redundant work, and at high API throughput a measurable per-request cost.
+
+So the convention is:
+
+- `belongs_to` is always declared `optional: true` (enforced by `Rails/OptionalBelongsTo`), turning off Rails' automatic existence validation.
+- Presence is validated manually with `validates :x_id, presence: true` **where the business rule requires it** — case by case, not globally (which is why no cop enforces the presence side).
+
+A deliberate performance trade-off backed by the external-identifier mapping — not an omission.
 
 ## Development
 
