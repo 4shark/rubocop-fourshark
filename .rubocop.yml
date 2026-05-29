@@ -1,0 +1,7 @@
+plugins:
+  - rubocop-internal_affairs
+  - rubocop-fourshark
+
+Naming/FileName:
+  Exclude:
+    - lib/rubocop-fourshark.rb
