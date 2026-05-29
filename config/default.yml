@@ -31,6 +31,13 @@ Rails/BidirectionalAssociations:
     - 'app/serializers/**/*.rb'
   VersionAdded: '0.1.0'
 
+Rails/OptionalBelongsTo:
+  Description: 'Declare `belongs_to` with `optional: true` and validate presence manually.'
+  Enabled: true
+  Include:
+    - 'app/models/**/*.rb'
+  VersionAdded: '0.1.0'
+
 RSpec/AssociationInverseOf:
   Description: 'Root models must include `.inverse_of` in association specs; subclasses must not.'
   Enabled: true
