@@ -3,6 +3,11 @@
 # names read like any other cop. Stock-cop settings shared across repos will
 # be added here in a later phase.
 
+Layout/MultiLineBlockSpacing:
+  Description: 'Add a blank line between consecutive statements when either spans multiple lines.'
+  Enabled: true
+  VersionAdded: '0.1.0'
+
 Style/DisallowSafeNavigation:
   Description: 'Do not use safe navigation (`&.`). Use explicit conditionals instead.'
   Enabled: true

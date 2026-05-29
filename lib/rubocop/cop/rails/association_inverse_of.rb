@@ -31,6 +31,7 @@ module RuboCop
           return if polymorphic_or_through?(node)
 
           kwargs = node.last_argument
+
           missing_inverse_of =
             !kwargs || !kwargs.hash_type? || kwargs.keys.none? { |k| k.value == :inverse_of }
 
