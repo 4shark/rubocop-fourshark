@@ -10,8 +10,8 @@ module RuboCop
         LintRoller::About.new(
           name: 'rubocop-fourshark',
           version: VERSION,
-          homepage: "TODO: Put your plugin's homepage URL here.",
-          description: "TODO: Put your plugin's description here."
+          homepage: 'https://github.com/4shark/rubocop-fourshark',
+          description: "4Shark's Ruby, Rails, and RSpec conventions as RuboCop cops."
         )
       end
 
