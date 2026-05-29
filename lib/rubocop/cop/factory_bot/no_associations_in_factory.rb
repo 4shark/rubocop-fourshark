@@ -36,6 +36,7 @@ module RuboCop
           return unless body
 
           statements = body.begin_type? ? body.children : [body]
+
           statements.each do |statement|
             add_offense(statement.loc.selector) if association_call?(statement)
           end

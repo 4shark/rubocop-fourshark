@@ -79,12 +79,14 @@ module RuboCop
             next if polymorphic_or_as?(node)
 
             model_name = class_name_from_ast
+
             assoc_name =
               begin
                 node.first_argument.value if node.first_argument
               rescue StandardError
                 nil
               end
+
             inverse_name = extract_inverse_of(node)
             target_class = extract_class_name(node, assoc_name)
 
@@ -102,6 +104,7 @@ module RuboCop
             rescue StandardError
               nil
             end
+
           pair.value.value if pair && pair.value
         end
 
@@ -115,6 +118,7 @@ module RuboCop
             rescue StandardError
               nil
             end
+
           if class_name_pair
             class_name_pair.value.value
           else
