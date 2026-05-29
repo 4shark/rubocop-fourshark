@@ -1,43 +1,100 @@
-# RuboCop::Fourshark
+# rubocop-fourshark
 
-TODO: Delete this and the text below, and describe your gem
+A RuboCop extension that encodes 4Shark's Ruby, Rails, and RSpec conventions as enforceable cops.
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/rubocop/fourshark`. To experiment with that code, run `bin/console` for an interactive prompt.
+## Why this gem exists
+
+4Shark has its own definition of good Ruby/Rails/RSpec code. Two needs the stock RuboCop ecosystem does not cover on its own:
+
+1. **Conventions stock RuboCop has no cop for.** Rules like "every association declares `inverse_of`", "`belongs_to` is `optional: true` with manual presence validation", or "no associations inside factories" are 4Shark decisions with no equivalent in `rubocop-rails`/`rubocop-rspec`. This gem ships them as real cops.
+2. **Stock conventions 4Shark deliberately rejects.** RuboCop's defaults nudge toward patterns 4Shark does not want — safe navigation (`&.`) and `try` being the clearest examples. Rather than each repo re-litigating the same `.rubocop.yml` overrides, the position is made enforceable in one place: a custom cop that flags the rejected construct.
+
+The goal is a single dependency that every 4Shark Ruby repository inherits, so the conventions are identical across all of them — and a new convention is added once, here, instead of in each repository.
 
 ## Installation
 
-TODO: Replace `UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG` with your gem name right after releasing it to RubyGems.org. Please do not do it earlier due to security reasons. Alternatively, replace this section with instructions to install your gem from git if you don't plan to release to RubyGems.org.
+The gem is published to RubyGems. Add it to the application's `Gemfile`:
 
-Install the gem and add to the application's Gemfile by executing:
-
-```bash
-bundle add UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG --require=false
+```ruby
+gem 'rubocop-fourshark', require: false
 ```
 
-If bundler is not being used to manage dependencies, install the gem by executing:
+or:
 
 ```bash
-gem install UPDATE_WITH_YOUR_GEM_NAME_IMMEDIATELY_AFTER_RELEASE_TO_RUBYGEMS_ORG
+bundle add rubocop-fourshark --require=false
 ```
 
-## Usage
+Then activate it as a plugin in `.rubocop.yml`:
 
-TODO: Write usage instructions here
+```yaml
+plugins:
+  - rubocop-fourshark
+```
+
+Activating the plugin auto-loads the gem's `config/default.yml`, which enables every cop below.
+
+> **Note — plugins are not transitively activated.** `rubocop-fourshark` depends on the upstream plugins (`rubocop-rails`, `rubocop-rspec`, `rubocop-rspec_rails`, `rubocop-performance`, `rubocop-factory_bot`), but `lint_roller` does not auto-activate a plugin's dependencies. Each repo still lists the upstream plugins it uses in its own `plugins:` block.
+
+## Cops
+
+All cops are **enabled by default** the moment the plugin is activated. Cops scoped to a path (models, specs, factories) only run on files matching that path. Each cop's source file under [`lib/rubocop/cop`](lib/rubocop/cop) carries runnable `@example` blocks showing the bad/good shapes.
+
+### Style
+
+| Cop | Intent |
+|---|---|
+| `Style/DisallowSafeNavigation` | Flags safe navigation (`&.`). 4Shark rejects it — a `&.` chain silently swallows a `nil` that usually signals a real bug. Use an explicit conditional so the `nil` case is handled on purpose. |
+| `Style/DisallowTry` | Flags `try` / `try!`. Same rationale as safe navigation — it hides the `nil`/missing-method case instead of handling it explicitly. |
+
+### Layout
+
+| Cop | Intent |
+|---|---|
+| `Layout/MultiLineBlockSpacing` | Requires a blank line between two consecutive statements when either spans multiple lines, so multi-line statements read as distinct blocks. |
+
+### Rails (models)
+
+| Cop | Intent |
+|---|---|
+| `Rails/AssociationInverseOf` | Every association (`belongs_to`/`has_many`/`has_one`) must declare `inverse_of`, so both sides resolve to the same in-memory object. Scoped to `app/models`. |
+| `Rails/BidirectionalAssociations` | An association must be declared on both sides of the relationship — the opposite model must carry the matching association. Scoped to `app/models`. |
+| `Rails/OptionalBelongsTo` | `belongs_to` must be `optional: true` with manual `validates :x_id, presence: true`, skipping the per-record existence `SELECT` that Rails adds by default. Scoped to `app/models`. |
+| `Rails/AlphabeticalMacros` | Same-kind class macros (associations, validations, scopes) must be sorted alphabetically within their group. Scoped to `app/models`. |
+
+### RSpec (specs)
+
+| Cop | Intent |
+|---|---|
+| `RSpec/AssociationInverseOf` | Root models must assert `.inverse_of` in association specs; subclasses must not. Scoped to `spec/models`. |
+| `RSpec/LetNotInContext` | `let` is declared at the top level of the example group, not inside a `context`. Keeps setup visible and avoids context-local surprises. |
+| `RSpec/NoConditionalInLet` | A `let` must not contain conditional logic — branch with separate `context`s instead of an `if` inside the memoized helper. |
+| `RSpec/NoFactoryBotInBefore` | Object creation belongs in `let`, not `before`. `before` is for actions, not for building the subjects under test. |
+
+### FactoryBot (factories)
+
+| Cop | Intent |
+|---|---|
+| `FactoryBot/NoAssociationsInFactory` | No associations declared inside a factory — they trigger cascading object creation and callbacks. Set the association manually in the spec. Scoped to `spec/factories`. |
+
+The full rationale behind each convention (the "why this is good 4Shark code") lives in the team's engineering docs; this README states the intent each cop enforces.
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+After checking out the repo, install dependencies and run the suite:
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+```bash
+bundle install
+bundle exec rspec      # cop specs
+bundle exec rubocop    # self-lint (includes rubocop-internal_affairs)
+```
 
-## Contributing
+Each new cop ships with a spec (`expect_offense` / `expect_no_offenses`) and a `config/default.yml` entry.
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/rubocop-fourshark. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/[USERNAME]/rubocop-fourshark/blob/main/CODE_OF_CONDUCT.md).
+## Releasing
+
+This project does **not** use HubFlow. Releases are cut from `main`: feature branches merge into `main` via PR, the version is bumped, a `vX.Y.Z` tag is created from `main`, and the gem is published to RubyGems. Consuming repos depend on the published version in their `Gemfile`.
 
 ## License
 
-The gem is available as open source under the terms of the [MIT License](https://opensource.org/licenses/MIT).
-
-## Code of Conduct
-
-Everyone interacting in the Rubocop::Fourshark project's codebases, issue trackers, chat rooms and mailing lists is expected to follow the [code of conduct](https://github.com/[USERNAME]/rubocop-fourshark/blob/main/CODE_OF_CONDUCT.md).
+Released under the [MIT License](https://opensource.org/licenses/MIT).
