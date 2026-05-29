@@ -28,6 +28,13 @@ Metrics/MethodLength:
 Metrics/PerceivedComplexity:
   Enabled: false
 
+# RSpec `describe` blocks and the gemspec block are legitimately long —
+# the universal exclusions for Metrics/BlockLength.
+Metrics/BlockLength:
+  Exclude:
+    - 'spec/**/*'
+    - '*.gemspec'
+
 # The association cops handle plain macro `send`s (belongs_to, has_many) that
 # are never called via `&.`; the on_csend coverage check is noise here.
 InternalAffairs/OnSendWithoutOnCSend:

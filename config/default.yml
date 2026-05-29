@@ -13,6 +13,13 @@ Style/DisallowTry:
   Enabled: true
   VersionAdded: '0.1.0'
 
+Rails/AlphabeticalMacros:
+  Description: 'Sort same-kind class macro declarations (associations, validations, scopes) alphabetically.'
+  Enabled: true
+  Include:
+    - 'app/models/**/*.rb'
+  VersionAdded: '0.1.0'
+
 Rails/AssociationInverseOf:
   Description: 'All associations must declare `inverse_of`.'
   Enabled: true
