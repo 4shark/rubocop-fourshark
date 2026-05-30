@@ -9,9 +9,13 @@ module RuboCop
       # alphabetically by their first symbol argument. Checked per macro name:
       # all `belongs_to` sorted among themselves, all `validates` sorted, etc.
       #
-      # Exceptions (lifecycle callbacks, dependency-ordered items, logical
-      # grouping) are NOT modelled — this is an experimental cop; if it flags
-      # more legitimate cases than it helps, drop it.
+      # `:through` associations are sorted as a separate trailing group (a
+      # `:through` association must be declared after its target association),
+      # not interleaved with the regular declarations.
+      #
+      # Other exceptions (lifecycle callbacks, other dependency-ordered items)
+      # are NOT modelled — this is an experimental cop; if it flags more
+      # legitimate cases than it helps, drop it.
       #
       # @example
       #   # bad
@@ -38,11 +42,23 @@ module RuboCop
           statements = body.begin_type? ? body.children : [body]
 
           MACROS.each do |macro|
-            flag_unsorted(statements.select { |statement| macro_call?(statement, macro) })
+            calls = statements.select { |statement| macro_call?(statement, macro) }
+            regular, through = calls.partition { |call| !through_option?(call) }
+            flag_unsorted(regular)
+            flag_unsorted(through)
           end
         end
 
         private
+
+        # A `:through` association must be declared after its target association,
+        # so it forms a separate trailing group sorted among itself — never
+        # interleaved with (or compared against) the regular declarations.
+        def through_option?(node)
+          node.arguments.any? do |argument|
+            argument.hash_type? && argument.keys.any? { |key| key.value == :through }
+          end
+        end
 
         def flag_unsorted(calls)
           calls.each_cons(2) do |previous, current|
