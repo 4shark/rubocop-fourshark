@@ -42,6 +42,60 @@ RSpec.describe RuboCop::Cop::RSpec::InverseOfMatcher, :config do
     end
   end
 
+  context 'when the model declares the association as polymorphic' do
+    before do
+      model = <<~MODEL
+        class Attachment < ApplicationRecord
+          belongs_to :attachable, polymorphic: true, optional: true
+        end
+      MODEL
+      allow_any_instance_of(described_class).to receive(:model_source).and_return(model)
+    end
+
+    it 'does not require .inverse_of for the polymorphic association' do
+      expect_no_offenses(<<~RUBY, 'spec/models/attachment_spec.rb')
+        RSpec.describe Attachment do
+          it { is_expected.to belong_to(:attachable) }
+        end
+      RUBY
+    end
+  end
+
+  context 'when the model is a nested class that is itself a root' do
+    before do
+      deal_document_row = <<~MODEL
+        class DealDocument < Document
+          class Row < ApplicationRecord
+            belongs_to :deal_document, inverse_of: :rows, optional: true
+          end
+        end
+      MODEL
+
+      document = "class Document < ApplicationRecord\nend"
+
+      allow_any_instance_of(described_class).to receive(:model_source) do |_cop, name|
+        { 'DealDocument::Row' => deal_document_row, 'Document' => document }[name]
+      end
+    end
+
+    it 'classifies the nested class by its own superclass, not the wrapper' do
+      expect_no_offenses(<<~RUBY, 'spec/models/deal_document/row_spec.rb')
+        RSpec.describe DealDocument::Row do
+          it { is_expected.to belong_to(:deal_document).inverse_of(:rows) }
+        end
+      RUBY
+    end
+
+    it 'registers an offense when the nested root association lacks .inverse_of' do
+      expect_offense(<<~RUBY, 'spec/models/deal_document/row_spec.rb')
+        RSpec.describe DealDocument::Row do
+          it { is_expected.to belong_to(:deal_document) }
+                              ^^^^^^^^^ Root models must include `.inverse_of` in association specs.
+        end
+      RUBY
+    end
+  end
+
   it 'does not register (and does not crash) when the model file is missing' do
     allow_any_instance_of(described_class).to receive(:model_source).and_return(nil)
 
