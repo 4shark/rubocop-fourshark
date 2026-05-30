@@ -1,3 +1,9 @@
+## [0.2.3] - 2026-05-30
+
+### Fixed
+
+- `Rails/OrderedMacros` sorts `:through` associations as a separate trailing group instead of interleaving them alphabetically — a `:through` association declared after its target association is no longer flagged
+
 ## [0.2.2] - 2026-05-30
 
 ### Fixed
