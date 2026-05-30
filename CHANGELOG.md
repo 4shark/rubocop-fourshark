@@ -1,3 +1,9 @@
+## [0.2.1] - 2026-05-29
+
+### Fixed
+
+- `RSpec/InverseOfMatcher` no longer crashes RuboCop — it classifies root vs subclass statically (reading the model file) instead of loading the model class
+
 ## [0.2.0] - 2026-05-29
 
 ### Added

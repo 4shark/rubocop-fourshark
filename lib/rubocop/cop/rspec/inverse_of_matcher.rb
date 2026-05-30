@@ -5,15 +5,19 @@ require 'rubocop'
 module RuboCop
   module Cop
     module RSpec
-      # Ensures that RSpec association specs handle `.inverse_of`
-      # correctly depending on whether the model is a root (directly < ApplicationRecord)
-      # or a subclass (STI).
+      # Ensures that RSpec association specs handle `.inverse_of` correctly
+      # depending on whether the model is a root (directly `< ApplicationRecord`)
+      # or an STI subclass.
       #
       # Rules:
-      # - Root models (direct superclass = ApplicationRecord) must include `.inverse_of`.
-      # - Subclasses (STI, superclass != ApplicationRecord but still inherit indirectly) must NOT include `.inverse_of`.
+      # - Root models (direct superclass = `ApplicationRecord`) must include `.inverse_of`.
+      # - STI subclasses (superclass is another model) must NOT include `.inverse_of` (it belongs to the parent).
       # - Associations marked as polymorphic or through are ignored.
-      # - Non-ActiveRecord classes are ignored.
+      # - Classes whose model file is missing or whose superclass is not a model are ignored.
+      #
+      # The root/subclass decision is made **statically** — by reading the model
+      # file and parsing its `class X < Y` declaration. The cop never loads the
+      # model class (a linter runs without the Rails app booted).
       #
       class InverseOfMatcher < ::RuboCop::Cop::Base
         MSG_MISSING_INVERSE   = 'Root models must include `.inverse_of` in association specs.'
@@ -27,8 +31,6 @@ module RuboCop
 
         def on_send(node)
           return unless node.method?(:belong_to)
-
-          # Skip polymorphic or through associations
           return if chain_has_option?(node, :polymorphic)
           return if chain_has_option?(node, :through)
 
@@ -36,7 +38,7 @@ module RuboCop
           return unless model_name
 
           classification = classify_model(model_name)
-          return if classification == :non_ar # ignore non-ActiveRecord classes
+          return if classification == :non_ar
 
           if classification == :root
             add_offense(node.loc.selector, message: MSG_MISSING_INVERSE) unless chain_has_inverse_of?(node)
@@ -84,21 +86,38 @@ module RuboCop
           relative.split('/').map { |part| part.split('_').map(&:capitalize).join }.join('::')
         end
 
-        # Classify the model: :root, :subclass, or :non_ar
+        # Classify the model as :root, :subclass, or :non_ar by reading the
+        # model file statically (no class loading).
         def classify_model(model_name)
-          require_dependency File.join('app/models', "#{model_name.underscore}.rb")
-          klass = model_name.safe_constantize
-          return :non_ar unless klass.is_a?(Class)
+          content = model_source(model_name)
+          return :non_ar unless content
 
-          if klass < ApplicationRecord
-            return :root if klass.superclass == ApplicationRecord
-
-            return :subclass
-          end
+          superclass = superclass_of(content)
+          return :non_ar unless superclass
+          return :root if superclass == 'ApplicationRecord'
+          return :subclass if model_source(superclass)
 
           :non_ar
         rescue StandardError
           :non_ar
+        end
+
+        def model_source(model_name)
+          path = File.join(Dir.pwd, 'app/models', "#{camel_to_snake(model_name)}.rb")
+          File.exist?(path) ? File.read(path) : nil
+        end
+
+        def superclass_of(content)
+          match = content.match(/^\s*class\s+[\w:]+\s*<\s*([\w:]+)/)
+          match && match[1]
+        end
+
+        # "UserAccount" → "user_account"; "Plan::Statement" → "plan/statement"
+        def camel_to_snake(name)
+          name.gsub('::', '/')
+              .gsub(/([A-Z\d]+)([A-Z][a-z])/, '\1_\2')
+              .gsub(/([a-z\d])([A-Z])/, '\1_\2')
+              .downcase
         end
       end
     end
