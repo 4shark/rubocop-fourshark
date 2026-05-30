@@ -1,3 +1,10 @@
+## [0.2.2] - 2026-05-30
+
+### Fixed
+
+- `RSpec/InverseOfMatcher` no longer demands `.inverse_of` on polymorphic associations — it reads the polymorphic declaration from the model instead of the spec matcher chain
+- `RSpec/InverseOfMatcher` classifies a nested class by its own superclass instead of the first `class` line in the file — a nested root model is no longer misread as an STI subclass
+
 ## [0.2.1] - 2026-05-29
 
 ### Fixed

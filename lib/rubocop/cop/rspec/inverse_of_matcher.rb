@@ -12,7 +12,7 @@ module RuboCop
       # Rules:
       # - Root models (direct superclass = `ApplicationRecord`) must include `.inverse_of`.
       # - STI subclasses (superclass is another model) must NOT include `.inverse_of` (it belongs to the parent).
-      # - Associations marked as polymorphic or through are ignored.
+      # - Associations the model declares as polymorphic are ignored (they have no single inverse).
       # - Classes whose model file is missing or whose superclass is not a model are ignored.
       #
       # The root/subclass decision is made **statically** — by reading the model
@@ -31,11 +31,12 @@ module RuboCop
 
         def on_send(node)
           return unless node.method?(:belong_to)
-          return if chain_has_option?(node, :polymorphic)
-          return if chain_has_option?(node, :through)
 
           model_name = model_class_from_spec
           return unless model_name
+
+          association_name = association_name_from(node)
+          return if association_name && polymorphic_in_model?(model_name, association_name)
 
           classification = classify_model(model_name)
           return if classification == :non_ar
@@ -63,13 +64,22 @@ module RuboCop
           node.each_ancestor(:send).any? { |ancestor| ancestor.method?(:inverse_of) }
         end
 
-        # Check if association has a given option (e.g., :polymorphic, :through)
-        def chain_has_option?(node, option_name)
-          node.each_ancestor(:send).any? do |ancestor|
-            ancestor.arguments.any? do |arg|
-              arg.hash_type? && arg.keys.any? { |k| k.value == option_name }
-            end
-          end
+        # The association name passed to the matcher, e.g. belong_to(:user) -> :user
+        def association_name_from(node)
+          argument = node.first_argument
+          return nil unless argument && argument.sym_type?
+
+          argument.value
+        end
+
+        # Whether the model declares this association as polymorphic. Polymorphic
+        # associations have no single inverse, so `.inverse_of` does not apply —
+        # and the declaration lives in the model, not in the spec matcher chain.
+        def polymorphic_in_model?(model_name, association_name)
+          content = model_source(model_name)
+          return false unless content
+
+          content.match?(/belongs_to\s+:#{Regexp.escape(association_name.to_s)}\b[^\n]*polymorphic:\s*true/)
         end
 
         # Convert spec file path into model class name
@@ -92,7 +102,7 @@ module RuboCop
           content = model_source(model_name)
           return :non_ar unless content
 
-          superclass = superclass_of(content)
+          superclass = superclass_of(content, model_name)
           return :non_ar unless superclass
           return :root if superclass == 'ApplicationRecord'
           return :subclass if model_source(superclass)
@@ -107,8 +117,12 @@ module RuboCop
           File.exist?(path) ? File.read(path) : nil
         end
 
-        def superclass_of(content)
-          match = content.match(/^\s*class\s+[\w:]+\s*<\s*([\w:]+)/)
+        # The declared superclass of the specific class named by the spec — not the
+        # first `class` line in the file. A nested `class Row < ApplicationRecord`
+        # inside `class Wrapper < Parent` must resolve to its own superclass.
+        def superclass_of(content, model_name)
+          class_name = model_name.split('::').last
+          match = content.match(/^\s*class\s+(?:[\w:]*::)?#{Regexp.escape(class_name)}\s*<\s*([\w:]+)/)
           match && match[1]
         end
 
