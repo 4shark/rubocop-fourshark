@@ -82,6 +82,7 @@ Where a 4Shark cop supersedes or contradicts a stock cop, `config/default.yml` t
 
 | Cop | Intent |
 |---|---|
+| `RSpec/Dialect` | Use `let`, never `subject` — every `subject`/`subject!` is flagged in favor of an explicit `let`. The implicit subject behind `is_expected` is a different method and is left untouched. Stock cop, configured via `PreferredMethods`. |
 | `RSpec/InverseOfMatcher` | Root models must assert `.inverse_of` in association specs; subclasses must not (it belongs to the parent). Scoped to `spec/models`. |
 | `RSpec/OverwrittenLet` | A `let`/`let!` must not override one defined in an outer example group — shadowing makes it ambiguous which value applies. Scenario-specific `let`s, and the same name across sibling contexts, are fine. |
 | `RSpec/ConditionalInLet` | A `let` must not contain conditional logic (`if`/`case`) — branch with separate `context`s instead. Ternaries are allowed. |

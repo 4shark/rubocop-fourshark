@@ -50,6 +50,18 @@ Rails/OrderedMacros:
     - 'app/models/**/*.rb'
   VersionAdded: '0.2.0'
 
+# Stock cop configured (not a 4Shark cop): map `subject`/`subject!` to `let`/`let!`
+# so every `subject` call is flagged in favor of an explicit `let`. The implicit
+# subject behind `is_expected` is a different method and is left untouched.
+RSpec/Dialect:
+  Description: 'Use `let`, never `subject` — the object under test is an explicit `let`.'
+  Enabled: true
+  PreferredMethods:
+    subject: let
+    subject!: let!
+  Include:
+    - 'spec/**/*_spec.rb'
+
 RSpec/InverseOfMatcher:
   Description: 'Root models must include `.inverse_of` in association specs; subclasses must not.'
   Enabled: true
