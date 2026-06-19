@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Added
+
+- `RSpec/Dialect` configured to forbid `subject`/`subject!` in favor of an explicit `let`/`let!`
+
 ## [0.2.3] - 2026-05-30
 
 ### Fixed
