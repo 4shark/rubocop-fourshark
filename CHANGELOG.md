@@ -2,7 +2,7 @@
 
 ### Added
 
-- `RSpec/Dialect` configured to forbid `subject`/`subject!` in favor of an explicit `let`/`let!`
+- `RSpec/Dialect` configured to forbid `subject`, `subject!` and `let!` in favor of a lazy `let`
 
 ## [0.2.3] - 2026-05-30
 
