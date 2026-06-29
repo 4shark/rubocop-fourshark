@@ -36,7 +36,7 @@ Gem::Specification.new do |spec|
   spec.metadata['default_lint_roller_plugin'] = 'RuboCop::Fourshark::Plugin'
 
   spec.add_dependency 'lint_roller', '~> 1.1'
-  spec.add_dependency 'rubocop', '>= 1.72.2'
+  spec.add_dependency 'rubocop', '>= 1.87'
 
   # Umbrella: bundle the upstream RuboCop plugins so consuming repos depend on
   # only rubocop-fourshark. Each repo still lists the plugins in its own
