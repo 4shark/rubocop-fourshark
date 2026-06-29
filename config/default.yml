@@ -8,6 +8,12 @@ Layout/MultilineStatementSpacing:
   Enabled: true
   VersionAdded: '0.2.0'
 
+# Stock cop configured (not a 4Shark cop): enforce the `indented` style for
+# multiline method-call chains — continuation calls are indented one step from
+# the receiver instead of aligning with the first call.
+Layout/MultilineMethodCallIndentation:
+  EnforcedStyle: indented
+
 Style/DisallowSafeNavigation:
   Description: 'Do not use safe navigation (`&.`). Use explicit conditionals instead.'
   Enabled: true
