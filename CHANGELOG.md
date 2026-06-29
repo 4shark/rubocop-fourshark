@@ -1,3 +1,9 @@
+## [0.5.1] - 2026-06-29
+
+### Fixed
+
+- `RSpec/Dialect` no longer remaps `subject`/`subject!` to `let`; only `let!` is remapped. The blind identifier rename rewrote value references such as `expect(subject)` into invalid `expect(let)`
+
 ## [0.5.0] - 2026-06-29
 
 ### Changed
