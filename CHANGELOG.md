@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Changed
+
+- Require `rubocop` `>= 1.87` — earlier versions drop the host project's `AllCops/Exclude` when this plugin's config is merged
+
 ## [0.4.0] - 2026-06-29
 
 ### Added
