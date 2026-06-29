@@ -56,16 +56,15 @@ Rails/OrderedMacros:
     - 'app/models/**/*.rb'
   VersionAdded: '0.2.0'
 
-# Stock cop configured (not a 4Shark cop): map `subject`/`subject!`/`let!` to `let`
-# so every `subject`, `subject!` and `let!` call is flagged in favor of a lazy
-# `let` (force creation in an explicit `before`, not with `let!`). The implicit
-# subject behind `is_expected` is a different method and is left untouched.
+# Stock cop configured (not a 4Shark cop): map `let!` to `let` so every eager
+# `let!` call is flagged in favor of a lazy `let` (force creation in an explicit
+# `before`, not with `let!`). `subject`/`subject!` are intentionally NOT remapped:
+# RSpec/Dialect renames the identifier blindly, so a `subject` -> `let` mapping
+# also rewrites value references like `expect(subject)` into invalid `expect(let)`.
 RSpec/Dialect:
-  Description: 'Use `let`, never `subject` or `let!` — objects are lazy `let`, forced in `before`.'
+  Description: 'Prefer a lazy `let` over `let!` — force creation in an explicit `before`, not with `let!`.'
   Enabled: true
   PreferredMethods:
-    subject: let
-    subject!: let
     let!: let
   Include:
     - 'spec/**/*_spec.rb'
