@@ -36,6 +36,18 @@ Activating the plugin auto-loads the gem's `config/default.yml`, which enables e
 
 > **Note — plugins are not transitively activated.** `rubocop-fourshark` depends on the upstream plugins (`rubocop-rails`, `rubocop-rspec`, `rubocop-rspec_rails`, `rubocop-performance`, `rubocop-factory_bot`), but `lint_roller` does not auto-activate a plugin's dependencies. Each repo still lists the upstream plugins it uses in its own `plugins:` block.
 
+> **Note — list `rubocop-fourshark` last.** When this gem configures a cop that an upstream plugin also ships (e.g. `RSpec/Dialect`, owned by `rubocop-rspec`), RuboCop merges the plugins' default config in `plugins:` order and the **last** one wins. List `rubocop-fourshark` **after** the upstream plugins so its configuration is the one that takes effect:
+>
+> ```yaml
+> plugins:
+>   - rubocop-rspec
+>   - rubocop-rspec_rails
+>   - rubocop-rails
+>   - rubocop-performance
+>   - rubocop-factory_bot
+>   - rubocop-fourshark
+> ```
+
 ## Cops
 
 All cops are **enabled by default** the moment the plugin is activated. Cops scoped to a path (models, specs, factories) only run on files matching that path. Each cop's source file under [`lib/rubocop/cop`](lib/rubocop/cop) carries runnable `@example` blocks showing the bad/good shapes.
