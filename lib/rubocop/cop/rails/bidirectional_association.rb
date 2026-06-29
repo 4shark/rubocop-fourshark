@@ -75,18 +75,12 @@ module RuboCop
           processed_source.ast.each_descendant(:send).filter_map do |node|
             next unless %i[belongs_to has_many has_one].include?(node.method_name)
 
-            # Skip polymorphic associations and `as:` options
+            # Skip polymorphic associations, `as:` options, and explicit `inverse_of: nil/false`
             next if polymorphic_or_as?(node)
+            next if inverse_disabled?(node)
 
             model_name = class_name_from_ast
-
-            assoc_name =
-              begin
-                node.first_argument.value if node.first_argument
-              rescue StandardError
-                nil
-              end
-
+            assoc_name = literal_value(node.first_argument)
             inverse_name = extract_inverse_of(node)
             target_class = extract_class_name(node, assoc_name)
 
@@ -95,45 +89,40 @@ module RuboCop
         end
 
         def extract_inverse_of(node)
-          kwargs = node.last_argument
-          return nil unless kwargs && kwargs.hash_type?
-
-          pair =
-            begin
-              kwargs.pairs.find { |p| p.key.value == :inverse_of }
-            rescue StandardError
-              nil
-            end
-
-          pair.value.value if pair && pair.value
+          literal_value(option_value(node, :inverse_of))
         end
 
         def extract_class_name(node, assoc_name)
-          kwargs = node.last_argument
-          return assoc_name.to_s.camelize unless kwargs && kwargs.hash_type?
+          literal_value(option_value(node, :class_name)) || assoc_name.to_s.camelize
+        end
 
-          class_name_pair =
-            begin
-              kwargs.pairs.find { |p| p.key.value == :class_name }
-            rescue StandardError
-              nil
-            end
-
-          if class_name_pair
-            class_name_pair.value.value
-          else
-            assoc_name.to_s.camelize
-          end
+        def inverse_disabled?(node)
+          value = option_value(node, :inverse_of)
+          value.falsey_literal? if value
         end
 
         def polymorphic_or_as?(node)
-          kwargs = node.last_argument
-          return false unless kwargs && kwargs.hash_type?
+          %i[polymorphic as].any? { |key| option_pair(node, key) }
+        end
 
-          kwargs.pairs.any? do |pair|
-            key = pair.key.value
-            %i[polymorphic as].include?(key)
-          end
+        # The keyword options hash is the last argument; pairs whose key is not a
+        # plain symbol (string keys, double-splats) are skipped rather than read.
+        def option_pair(node, key)
+          kwargs = node.last_argument
+          return nil unless kwargs.respond_to?(:hash_type?) && kwargs.hash_type?
+
+          kwargs.pairs.find { |pair| pair.key.sym_type? && pair.key.value == key }
+        end
+
+        def option_value(node, key)
+          pair = option_pair(node, key)
+          pair.value if pair
+        end
+
+        # A node's literal value, only when it actually carries one — guards
+        # against non-literal options like `inverse_of: nil` or `class_name: Foo`.
+        def literal_value(node)
+          node.value if node.respond_to?(:value)
         end
 
         def class_name_from_ast
