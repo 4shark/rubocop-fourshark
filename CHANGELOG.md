@@ -4,6 +4,10 @@
 
 - Require `rubocop` `>= 1.87` — earlier versions drop the host project's `AllCops/Exclude` when this plugin's config is merged
 
+### Fixed
+
+- `Rails/BidirectionalAssociation` no longer crashes on associations with non-literal options (e.g. `inverse_of: nil`); associations that explicitly opt out of an inverse are skipped
+
 ## [0.4.0] - 2026-06-29
 
 ### Added
