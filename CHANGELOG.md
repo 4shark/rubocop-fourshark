@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Added
+
+- `Layout/MultilineMethodCallIndentation` configured to `indented` — multiline method-call chains indent continuation calls one step from the receiver instead of aligning with the first call
+
 ## [0.3.0] - 2026-06-19
 
 ### Added

@@ -129,9 +129,9 @@ module RuboCop
         # "UserAccount" → "user_account"; "Plan::Statement" → "plan/statement"
         def camel_to_snake(name)
           name.gsub('::', '/')
-              .gsub(/([A-Z\d]+)([A-Z][a-z])/, '\1_\2')
-              .gsub(/([a-z\d])([A-Z])/, '\1_\2')
-              .downcase
+            .gsub(/([A-Z\d]+)([A-Z][a-z])/, '\1_\2')
+            .gsub(/([a-z\d])([A-Z])/, '\1_\2')
+            .downcase
         end
       end
     end
