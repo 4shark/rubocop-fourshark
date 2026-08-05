@@ -46,7 +46,7 @@ module RuboCop
           elsif classification == :subclass
             add_offense(node.loc.selector, message: MSG_FORBIDDEN_INVERSE) if chain_has_inverse_of?(node)
           end
-        rescue StandardError => e
+        rescue StandardError => exception
           source_name =
             if processed_source && processed_source.buffer
               processed_source.file_path
@@ -54,7 +54,7 @@ module RuboCop
               'unknown'
             end
 
-          warn "RSpec/InverseOfMatcher failed on #{source_name}: #{e.message}"
+          warn "RSpec/InverseOfMatcher failed on #{source_name}: #{exception.message}"
         end
 
         private

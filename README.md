@@ -52,7 +52,7 @@ Activating the plugin auto-loads the gem's `config/default.yml`, which enables e
 
 All cops are **enabled by default** the moment the plugin is activated. Cops scoped to a path (models, specs, factories) only run on files matching that path. Each cop's source file under [`lib/rubocop/cop`](lib/rubocop/cop) carries runnable `@example` blocks showing the bad/good shapes.
 
-### Naming
+### Cop naming
 
 Cop names follow RuboCop's empirical convention — a noun phrase describing the construct or smell, no `Disallow*`/`No*` prefixes — with two deliberate exceptions:
 
@@ -80,6 +80,12 @@ Where a 4Shark cop supersedes or contradicts a stock cop, `config/default.yml` t
 | Cop | Intent |
 |---|---|
 | `Layout/MultilineStatementSpacing` | Requires a blank line between two consecutive statements when either spans multiple lines, so multi-line statements read as distinct units. |
+
+### Naming
+
+| Cop | Intent |
+|---|---|
+| `Naming/RescuedExceptionsVariableName` | A rescued exception is bound to `exception` (`_exception` when unread), not the cop's default `e` — 4Shark bans single-letter variables, and this is the one slot where a stock cop demanded one. Stock cop, configured via `PreferredName`; autocorrects. |
 
 ### Rails (models)
 

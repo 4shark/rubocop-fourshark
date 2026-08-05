@@ -58,7 +58,7 @@ module RuboCop
               add_global_offense("#{target_class} is missing opposite association for #{model_name}")
             end
           end
-        rescue StandardError => e
+        rescue StandardError => exception
           source_name =
             if processed_source && processed_source.buffer
               processed_source.file_path
@@ -66,7 +66,7 @@ module RuboCop
               'unknown'
             end
 
-          warn "Rails/BidirectionalAssociation failed on #{source_name}: #{e.message}"
+          warn "Rails/BidirectionalAssociation failed on #{source_name}: #{exception.message}"
         end
 
         private

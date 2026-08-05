@@ -41,7 +41,7 @@ module RuboCop
             !kwargs || !kwargs.hash_type? || kwargs.keys.none? { |k| k.value == :inverse_of }
 
           add_offense(node.loc.selector) if missing_inverse_of
-        rescue StandardError => e
+        rescue StandardError => exception
           source_name =
             if processed_source && processed_source.buffer
               processed_source.file_path
@@ -49,7 +49,7 @@ module RuboCop
               'unknown'
             end
 
-          warn "Rails/MandatoryInverseOf failed on #{source_name}: #{e.message}"
+          warn "Rails/MandatoryInverseOf failed on #{source_name}: #{exception.message}"
         end
 
         private
