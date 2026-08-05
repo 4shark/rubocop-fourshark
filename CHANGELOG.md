@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Changed
+
+- `Style/DisallowDelegate` — a method that forwards its own name to a collaborator is flagged
+
 ## [0.7.1] - 2026-08-05
 
 ### Removed
