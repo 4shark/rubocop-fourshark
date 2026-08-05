@@ -65,11 +65,11 @@ module RuboCop
           body = group.body
           return false unless body
 
-          if body.begin_type?
-            statements = body.children
-          else
-            statements = [body]
-          end
+          statements = if body.begin_type?
+                         body.children
+                       else
+                         [body]
+                       end
 
           statements.any? { |statement| let_named?(statement, name) }
         end
@@ -77,11 +77,11 @@ module RuboCop
         def let_named?(statement, name)
           return false unless statement.is_a?(::RuboCop::AST::Node)
 
-          if statement.respond_to?(:send_node)
-            send = statement.send_node
-          else
-            send = statement
-          end
+          send = if statement.respond_to?(:send_node)
+                   statement.send_node
+                 else
+                   statement
+                 end
 
           return false unless send.send_type?
           return false unless LET_METHODS.include?(send.method_name) && send.receiver.nil?

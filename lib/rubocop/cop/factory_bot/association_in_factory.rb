@@ -35,11 +35,11 @@ module RuboCop
           body = node.body
           return unless body
 
-          if body.begin_type?
-            statements = body.children
-          else
-            statements = [body]
-          end
+          statements = if body.begin_type?
+                         body.children
+                       else
+                         [body]
+                       end
 
           statements.each do |statement|
             add_offense(statement.loc.selector) if association_call?(statement)

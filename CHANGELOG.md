@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Removed
+
+- `Style/ConditionalAssignment` configuration — the stock default governs assignment from a conditional again
+
 ## [0.7.0] - 2026-08-05
 
 ### Added
