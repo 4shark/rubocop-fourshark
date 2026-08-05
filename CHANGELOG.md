@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Added
+
+- `Naming/RescuedExceptionsVariableName` configured to `exception` — a rescued exception is no longer bound to a single-letter name
+
 ## [0.5.1] - 2026-06-29
 
 ### Fixed
