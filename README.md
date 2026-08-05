@@ -76,7 +76,6 @@ Where a 4Shark cop supersedes or contradicts a stock cop, `config/default.yml` t
 
 | Cop | Intent |
 |---|---|
-| `Style/ConditionalAssignment` | When a conditional decides a value, each branch assigns the variable. The cop's default (`assign_to_condition`) demands `x = if ... else ... end`, the one form the no-ternary convention rejects — converting a ternary would land straight on it. Ternaries are out of scope (`IncludeTernaryExpressions: false`): `Style/DisallowTernary` bans them, and this cop's ternary autocorrect only produces another ternary. Stock cop, configured via `EnforcedStyle`. |
 | `Style/DisallowDelegate` | Flags automatic delegation (`delegate`, `delegate_missing_to`, `def_delegator(s)`, `DelegateClass`). A `delegate` line is a macro call, not a definition, so `grep 'def foo'` and jump-to-definition find nothing — the community name for the smell is Fowler's Middle Man. Write the method, or let the caller ask the object that knows. |
 | `Style/DisallowSafeNavigation` | Flags safe navigation (`&.`). 4Shark rejects it — a `&.` chain silently swallows a `nil` that usually signals a real bug. Use an explicit conditional so the `nil` case is handled on purpose. |
 | `Style/DisallowTernary` | Flags the ternary conditional (`cond ? a : b`). `?` and `:` are punctuation that already mean other things in Ruby (`valid?`, `:symbol`), and the ternary hides a branch inside an expression where skimming misses it. Use an explicit `if`/`else`. |

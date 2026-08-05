@@ -22,17 +22,6 @@ Layout/MultilineMethodCallIndentation:
 Naming/RescuedExceptionsVariableName:
   PreferredName: exception
 
-# Stock cop configured (not a 4Shark cop): when a conditional decides a value,
-# each branch assigns the variable. The cop's default (`assign_to_condition`)
-# demands `x = if ... else ... end`, the one form the 4Shark no-ternary
-# convention rejects — converting a ternary would land straight on it.
-# Ternaries are out of scope: `Style/DisallowTernary` bans them outright, and
-# this cop's ternary autocorrect produces another ternary (`cond ? x = a : x = b`),
-# which stays an offense that no autocorrect can clear.
-Style/ConditionalAssignment:
-  EnforcedStyle: assign_inside_condition
-  IncludeTernaryExpressions: false
-
 Style/DisallowDelegate:
   Description: 'Do not use automatic delegation. Write the method explicitly.'
   Enabled: true

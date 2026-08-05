@@ -39,11 +39,11 @@ module RuboCop
           body = node.body
           return unless body
 
-          if body.begin_type?
-            statements = body.children
-          else
-            statements = [body]
-          end
+          statements = if body.begin_type?
+                         body.children
+                       else
+                         [body]
+                       end
 
           MACROS.each do |macro|
             calls = statements.select { |statement| macro_call?(statement, macro) }
