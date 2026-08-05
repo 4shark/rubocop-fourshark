@@ -22,10 +22,31 @@ Layout/MultilineMethodCallIndentation:
 Naming/RescuedExceptionsVariableName:
   PreferredName: exception
 
+# Stock cop configured (not a 4Shark cop): when a conditional decides a value,
+# each branch assigns the variable. The cop's default (`assign_to_condition`)
+# demands `x = if ... else ... end`, the one form the 4Shark no-ternary
+# convention rejects — converting a ternary would land straight on it.
+# Ternaries are out of scope: `Style/DisallowTernary` bans them outright, and
+# this cop's ternary autocorrect produces another ternary (`cond ? x = a : x = b`),
+# which stays an offense that no autocorrect can clear.
+Style/ConditionalAssignment:
+  EnforcedStyle: assign_inside_condition
+  IncludeTernaryExpressions: false
+
+Style/DisallowDelegate:
+  Description: 'Do not use automatic delegation. Write the method explicitly.'
+  Enabled: true
+  VersionAdded: '0.7.0'
+
 Style/DisallowSafeNavigation:
   Description: 'Do not use safe navigation (`&.`). Use explicit conditionals instead.'
   Enabled: true
   VersionAdded: '0.1.0'
+
+Style/DisallowTernary:
+  Description: 'Do not use the ternary conditional. Use an explicit `if`/`else` instead.'
+  Enabled: true
+  VersionAdded: '0.7.0'
 
 Style/DisallowTry:
   Description: 'Do not use `try` or `try!`. Use explicit conditionals instead.'
@@ -113,11 +134,27 @@ FactoryBot/AssociationInFactory:
   VersionAdded: '0.2.0'
 
 # Stock cops disabled because a 4Shark cop supersedes or contradicts them.
+# `Rails/Delegate` flags `def bar; foo.bar; end` and asks for `delegate :bar, to: :foo`,
+# the opposite of `Style/DisallowDelegate`.
 # `Rails/InverseOf` only flags when AR can't auto-detect the inverse;
 # `Rails/MandatoryInverseOf` covers it and more.
+# The three ternary-shaping cops are superseded by `Style/DisallowTernary`, which bans
+# every ternary — they could only ever fire on a line that is already an offense.
 # `Style/SafeNavigation` converts to `&.`, the opposite of `Style/DisallowSafeNavigation`.
+Rails/Delegate:
+  Enabled: false
+
 Rails/InverseOf:
   Enabled: false
 
+Style/MultilineTernaryOperator:
+  Enabled: false
+
+Style/NestedTernaryOperator:
+  Enabled: false
+
 Style/SafeNavigation:
+  Enabled: false
+
+Style/TernaryParentheses:
   Enabled: false

@@ -42,12 +42,11 @@ module RuboCop
 
           add_offense(node.loc.selector) if missing_inverse_of
         rescue StandardError => exception
-          source_name =
-            if processed_source && processed_source.buffer
-              processed_source.file_path
-            else
-              'unknown'
-            end
+          if processed_source && processed_source.buffer
+            source_name = processed_source.file_path
+          else
+            source_name = 'unknown'
+          end
 
           warn "Rails/MandatoryInverseOf failed on #{source_name}: #{exception.message}"
         end

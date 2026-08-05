@@ -7,7 +7,7 @@ module RuboCop
     module RSpec
       # Forbids conditional logic (`if`/`case`) inside a `let`/`let!` block.
       # Branching object setup belongs in separate `context` blocks, not in a
-      # single `let`. Ternaries are allowed.
+      # single `let`. A ternary is flagged by `Style/DisallowTernary`, not here.
       #
       # @example
       #   # bad

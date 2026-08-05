@@ -47,12 +47,11 @@ module RuboCop
             add_offense(node.loc.selector, message: MSG_FORBIDDEN_INVERSE) if chain_has_inverse_of?(node)
           end
         rescue StandardError => exception
-          source_name =
-            if processed_source && processed_source.buffer
-              processed_source.file_path
-            else
-              'unknown'
-            end
+          if processed_source && processed_source.buffer
+            source_name = processed_source.file_path
+          else
+            source_name = 'unknown'
+          end
 
           warn "RSpec/InverseOfMatcher failed on #{source_name}: #{exception.message}"
         end
@@ -114,7 +113,9 @@ module RuboCop
 
         def model_source(model_name)
           path = File.join(Dir.pwd, 'app/models', "#{camel_to_snake(model_name)}.rb")
-          File.exist?(path) ? File.read(path) : nil
+          return File.read(path) if File.exist?(path)
+
+          nil
         end
 
         # The declared superclass of the specific class named by the spec — not the

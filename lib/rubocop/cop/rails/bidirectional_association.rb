@@ -47,24 +47,22 @@ module RuboCop
 
             opposite_content = File.read(opposite_model_path)
 
-            expected_inverse =
-              if inverse_name
-                inverse_name.to_s
-              else
-                camel_to_snake(model_name).split('/').last.pluralize
-              end
+            if inverse_name
+              expected_inverse = inverse_name.to_s
+            else
+              expected_inverse = camel_to_snake(model_name).split('/').last.pluralize
+            end
 
             unless /(belongs_to|has_many|has_one)\s+:#{expected_inverse}/.match?(opposite_content)
               add_global_offense("#{target_class} is missing opposite association for #{model_name}")
             end
           end
         rescue StandardError => exception
-          source_name =
-            if processed_source && processed_source.buffer
-              processed_source.file_path
-            else
-              'unknown'
-            end
+          if processed_source && processed_source.buffer
+            source_name = processed_source.file_path
+          else
+            source_name = 'unknown'
+          end
 
           warn "Rails/BidirectionalAssociation failed on #{source_name}: #{exception.message}"
         end
