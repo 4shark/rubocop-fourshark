@@ -56,7 +56,7 @@ All cops are **enabled by default** the moment the plugin is activated. Cops sco
 
 Cop names follow RuboCop's empirical convention — a noun phrase describing the construct or smell, no `Disallow*`/`No*` prefixes — with two deliberate exceptions:
 
-- **`Style/DisallowSafeNavigation` / `Style/DisallowTry`** keep the `Disallow*` prefix. RuboCop has no idiom for "forbid a construct it otherwise permits" (it uses `EnforcedStyle` on one cop), and the natural noun name is already taken by a stock cop with the *opposite* intent — `Style/SafeNavigation` *converts to* `&.`. `Disallow*` is unambiguous and collision-free.
+- **`Style/DisallowDelegate` / `Style/DisallowSafeNavigation` / `Style/DisallowTernary` / `Style/DisallowTry`** keep the `Disallow*` prefix. RuboCop has no idiom for "forbid a construct it otherwise permits" (it uses `EnforcedStyle` on one cop), and the natural noun name is already taken by a stock cop with the *opposite* intent — `Style/SafeNavigation` *converts to* `&.`, `Rails/Delegate` *converts to* `delegate`. `Disallow*` is unambiguous and collision-free.
 - **`Rails/MandatoryInverseOf`** is named to distinguish it from stock `Rails/InverseOf`, which only flags associations where Active Record cannot auto-detect the inverse. Ours mandates `inverse_of` on *every* association — a strict superset — so the gem disables the stock cop (below).
 
 ### Stock cops disabled
@@ -65,14 +65,21 @@ Where a 4Shark cop supersedes or contradicts a stock cop, `config/default.yml` t
 
 | Disabled stock cop | Why |
 |---|---|
+| `Rails/Delegate` | contradicts `Style/DisallowDelegate` — it turns an explicit method into `delegate`, we forbid the macro |
 | `Rails/InverseOf` | superseded by `Rails/MandatoryInverseOf` (covers its cases and more) |
+| `Style/MultilineTernaryOperator` | superseded by `Style/DisallowTernary` — it shapes a construct we forbid outright |
+| `Style/NestedTernaryOperator` | superseded by `Style/DisallowTernary` — same |
 | `Style/SafeNavigation` | contradicts `Style/DisallowSafeNavigation` — it pushes `&.`, we forbid it |
+| `Style/TernaryParentheses` | superseded by `Style/DisallowTernary` — same |
 
 ### Style
 
 | Cop | Intent |
 |---|---|
+| `Style/ConditionalAssignment` | When a conditional decides a value, each branch assigns the variable. The cop's default (`assign_to_condition`) demands `x = if ... else ... end`, the one form the no-ternary convention rejects — converting a ternary would land straight on it. Ternaries are out of scope (`IncludeTernaryExpressions: false`): `Style/DisallowTernary` bans them, and this cop's ternary autocorrect only produces another ternary. Stock cop, configured via `EnforcedStyle`. |
+| `Style/DisallowDelegate` | Flags automatic delegation (`delegate`, `delegate_missing_to`, `def_delegator(s)`, `DelegateClass`). A `delegate` line is a macro call, not a definition, so `grep 'def foo'` and jump-to-definition find nothing — the community name for the smell is Fowler's Middle Man. Write the method, or let the caller ask the object that knows. |
 | `Style/DisallowSafeNavigation` | Flags safe navigation (`&.`). 4Shark rejects it — a `&.` chain silently swallows a `nil` that usually signals a real bug. Use an explicit conditional so the `nil` case is handled on purpose. |
+| `Style/DisallowTernary` | Flags the ternary conditional (`cond ? a : b`). `?` and `:` are punctuation that already mean other things in Ruby (`valid?`, `:symbol`), and the ternary hides a branch inside an expression where skimming misses it. Use an explicit `if`/`else`. |
 | `Style/DisallowTry` | Flags `try` / `try!`. Same rationale — it hides the `nil`/missing-method case instead of handling it explicitly. |
 
 ### Layout
@@ -103,7 +110,7 @@ Where a 4Shark cop supersedes or contradicts a stock cop, `config/default.yml` t
 | `RSpec/Dialect` | Use `let`, never `subject` or `let!` — every `subject`/`subject!`/`let!` is flagged in favor of a lazy `let` (force creation in an explicit `before`, not with `let!`). The implicit subject behind `is_expected` is a different method and is left untouched. Stock cop, configured via `PreferredMethods`. |
 | `RSpec/InverseOfMatcher` | Root models must assert `.inverse_of` in association specs; subclasses must not (it belongs to the parent). Scoped to `spec/models`. |
 | `RSpec/OverwrittenLet` | A `let`/`let!` must not override one defined in an outer example group — shadowing makes it ambiguous which value applies. Scenario-specific `let`s, and the same name across sibling contexts, are fine. |
-| `RSpec/ConditionalInLet` | A `let` must not contain conditional logic (`if`/`case`) — branch with separate `context`s instead. Ternaries are allowed. |
+| `RSpec/ConditionalInLet` | A `let` must not contain conditional logic (`if`/`case`) — branch with separate `context`s instead. A ternary inside a `let` is flagged by `Style/DisallowTernary`, not by this cop. |
 | `RSpec/FactoryBotInBefore` | Object creation belongs in `let`, not `before`. `before` is for actions, not for building the subjects under test. |
 
 ### FactoryBot (factories)

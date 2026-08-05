@@ -1,3 +1,16 @@
+## [Unreleased]
+
+### Added
+
+- `Style/DisallowDelegate` — automatic delegation is flagged
+- `Style/DisallowTernary` — the ternary conditional is flagged
+
+### Changed
+
+- `Rails/Delegate` disabled — it asks for the macro `Style/DisallowDelegate` forbids
+- `Style/MultilineTernaryOperator`, `Style/NestedTernaryOperator` and `Style/TernaryParentheses` disabled — they shape a construct `Style/DisallowTernary` forbids outright
+- `Style/ConditionalAssignment` configured to `assign_inside_condition` — a conditional that decides a value assigns it in each branch, and ternaries are left to `Style/DisallowTernary`
+
 ## [0.6.0] - 2026-08-05
 
 ### Added
