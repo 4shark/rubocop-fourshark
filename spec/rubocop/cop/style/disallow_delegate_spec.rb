@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
+  # Anonymous block forwarding — `def each(&)` — is Ruby 3.1, the version the
+  # gemspec already requires. RuboCop's own default parser target is older.
+  let(:ruby_version) { 3.1 }
+
   it 'registers an offense for delegate' do
     expect_offense(<<~RUBY)
       delegate :name, to: :user
@@ -140,7 +144,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     expect_offense(<<~RUBY)
       def lock_key
           ^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        Lock.lock_key(company_id: company_id)
+        Lock.lock_key(company_id: user.company_id)
       end
     RUBY
   end
@@ -149,7 +153,91 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     expect_offense(<<~RUBY)
       def lock_key
           ^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        audit.class.lock_key(company_id: company_id)
+        audit.class.lock_key(company_id: user.company_id)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for each in a class including Enumerable' do
+    expect_no_offenses(<<~RUBY)
+      class SearchResult
+        include Enumerable
+
+        def each(&)
+          results.each(&)
+        end
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for each in a class including Enumerable among other statements' do
+    expect_no_offenses(<<~RUBY)
+      class SearchResult
+        include Comparable
+        include ::Enumerable
+
+        attr_reader :raw_response
+
+        def each(&)
+          results.each(&)
+        end
+      end
+    RUBY
+  end
+
+  it 'registers an offense for each in a class that does not include Enumerable' do
+    expect_offense(<<~RUBY)
+      class SearchResult
+        def each(&)
+            ^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+          results.each(&)
+        end
+      end
+    RUBY
+  end
+
+  it 'registers an offense for a method other than each in a class including Enumerable' do
+    expect_offense(<<~RUBY)
+      class SearchResult
+        include Enumerable
+
+        def size
+            ^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+          results.size
+        end
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for a method composing its own attribute into the call' do
+    expect_no_offenses(<<~RUBY)
+      def output
+        variable.output(value)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for a method composing an instance variable into the call' do
+    expect_no_offenses(<<~RUBY)
+      def output
+        variable.output(@value)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for a method composing its own attribute into a keyword argument' do
+    expect_no_offenses(<<~RUBY)
+      def lock_key
+        Lock.lock_key(company_id: company_id)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for a setter forwarding its own parameter' do
+    expect_offense(<<~RUBY)
+      def output=(value)
+          ^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        variable.output = value
       end
     RUBY
   end

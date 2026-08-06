@@ -1,3 +1,10 @@
+## [Unreleased]
+
+### Fixed
+
+- `Style/DisallowDelegate` — `each` in a class including `Enumerable` is no longer flagged
+- `Style/DisallowDelegate` — a method composing its own state into the call is no longer flagged
+
 ## [0.8.1] - 2026-08-06
 
 ### Fixed
