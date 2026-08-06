@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+
+- `Style/DisallowDelegate` — a method answering about its own class is no longer flagged
+
 ## [0.8.0] - 2026-08-05
 
 ### Changed
