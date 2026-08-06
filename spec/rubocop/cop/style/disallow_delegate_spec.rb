@@ -50,7 +50,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     expect_offense(<<~RUBY)
       def name
           ^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        commission.name
+        author.name
       end
     RUBY
   end
@@ -59,7 +59,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     expect_offense(<<~RUBY)
       def starts_at
           ^^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        commission.plan.period.starts_at
+        schedule.window.period.starts_at
       end
     RUBY
   end
@@ -68,7 +68,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     expect_offense(<<~RUBY)
       def id
           ^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        @calendar_audit.id
+        @account.id
       end
     RUBY
   end
@@ -77,7 +77,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     expect_offense(<<~RUBY)
       def name=(value)
           ^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        commission.name = value
+        author.name = value
       end
     RUBY
   end
@@ -93,9 +93,9 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
   it 'does not register an offense for a method that does more than forward' do
     expect_no_offenses(<<~RUBY)
       def name
-        return 'unknown' if commission.blank?
+        return 'unknown' if author.blank?
 
-        commission.name
+        author.name
       end
     RUBY
   end
@@ -127,7 +127,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
   it 'does not register an offense for a method composing its attributes into its own class method' do
     expect_no_offenses(<<~RUBY)
       def lock_key
-        self.class.lock_key(company_id: company_id)
+        self.class.lock_key(owner_id: owner_id)
       end
     RUBY
   end
@@ -144,7 +144,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     expect_offense(<<~RUBY)
       def lock_key
           ^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        Lock.lock_key(company_id: user.company_id)
+        Registry.lock_key
       end
     RUBY
   end
@@ -153,7 +153,15 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     expect_offense(<<~RUBY)
       def lock_key
           ^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        audit.class.lock_key(company_id: user.company_id)
+        post.class.lock_key(owner_id: user.owner_id)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for a method composing own state reached through a call' do
+    expect_no_offenses(<<~RUBY)
+      def lock_key
+        Registry.lock_key(owner_id: record.owner_id)
       end
     RUBY
   end
@@ -212,7 +220,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
   it 'does not register an offense for a method composing its own attribute into the call' do
     expect_no_offenses(<<~RUBY)
       def output
-        variable.output(value)
+        formatter.output(value)
       end
     RUBY
   end
@@ -220,7 +228,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
   it 'does not register an offense for a method composing an instance variable into the call' do
     expect_no_offenses(<<~RUBY)
       def output
-        variable.output(@value)
+        formatter.output(@value)
       end
     RUBY
   end
@@ -228,7 +236,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
   it 'does not register an offense for a method composing its own attribute into a keyword argument' do
     expect_no_offenses(<<~RUBY)
       def lock_key
-        Lock.lock_key(company_id: company_id)
+        Registry.lock_key(owner_id: owner_id)
       end
     RUBY
   end
@@ -237,7 +245,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     expect_offense(<<~RUBY)
       def output=(value)
           ^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        variable.output = value
+        formatter.output = value
       end
     RUBY
   end
@@ -245,7 +253,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
   it 'does not register an offense for own state passed through a splat' do
     expect_no_offenses(<<~RUBY)
       def output
-        variable.output(*items)
+        formatter.output(*items)
       end
     RUBY
   end
@@ -253,7 +261,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
   it 'does not register an offense for own state passed through a double splat' do
     expect_no_offenses(<<~RUBY)
       def options
-        variable.options(**settings)
+        formatter.options(**settings)
       end
     RUBY
   end
@@ -261,7 +269,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
   it 'does not register an offense for own state passed through an array' do
     expect_no_offenses(<<~RUBY)
       def values
-        variable.values([value])
+        formatter.values([value])
       end
     RUBY
   end
@@ -274,11 +282,10 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     RUBY
   end
 
-  it 'registers an offense for own state reached through another call' do
-    expect_offense(<<~RUBY)
+  it 'does not register an offense for own state reached through another call' do
+    expect_no_offenses(<<~RUBY)
       def label
-          ^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        variable.label(value.to_s)
+        formatter.label(value.to_s)
       end
     RUBY
   end
@@ -287,7 +294,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     expect_offense(<<~RUBY)
       def starts_at
           ^^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        commission.plan.period.starts_at(calendar)
+        schedule.window.period.starts_at(calendar)
       end
     RUBY
   end
@@ -295,7 +302,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
   it 'does not register an offense for an instance variable receiver carrying an own state argument' do
     expect_no_offenses(<<~RUBY)
       def id
-        @calendar_audit.id(scope)
+        @account.id(scope)
       end
     RUBY
   end
@@ -303,7 +310,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
   it 'does not register an offense for a direct collaborator carrying an own state argument' do
     expect_no_offenses(<<~RUBY)
       def name
-        commission.name(locale)
+        author.name(locale)
       end
     RUBY
   end
