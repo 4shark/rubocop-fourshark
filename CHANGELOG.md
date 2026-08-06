@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+
+- `Style/DisallowDelegate` — own state reached through a call on it is no longer flagged
+
 ## [0.8.3] - 2026-08-06
 
 ### Fixed

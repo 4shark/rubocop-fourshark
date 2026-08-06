@@ -37,34 +37,36 @@ module RuboCop
       # contributes something the caller would otherwise have to reach in and
       # take, and the result is a simpler API on the object that owns the data.
       #
-      # Three limits keep that exemption from swallowing the rule. The receiver
-      # must not itself be a chain — Remove Middle Man on a message chain IS the
-      # caller navigating, so composing own state does not excuse it. Own state
-      # is an instance variable or a receiverless call, so a method parameter
-      # forwarded through does not qualify and a setter stays flagged. And own
-      # state is read through a splat, a double splat, an array or a block pass,
-      # because the wrapper does not change whose state the argument carries.
+      # Own state is an instance variable or a receiverless call, reached
+      # directly, through a wrapper, or through a call on it — `record`,
+      # `record.owner_id` and `[record.owner_id]` all carry the object's own
+      # data. A method PARAMETER does not: it arrives as an `lvar`, so a setter
+      # handing its argument to a collaborator stays flagged.
       #
-      # An argument derived from own state through another call —
-      # `variable.label(value.to_s)` — is still flagged. Recursing into an
-      # argument's receiver would also exempt `Lock.lock_key(company_id:
-      # user.company_id)`, which is delegation, so the conservative reading wins.
+      # One limit keeps the exemption from swallowing the rule: the receiver must
+      # not itself be a chain. Remove Middle Man on a message chain IS the caller
+      # navigating, so composing own state does not excuse it.
+      #
+      # A forward that passes NO argument is the one that republishes, and it is
+      # always flagged. That is the line — supplying data the collaborator needs
+      # is composition, echoing back what the collaborator already knows is
+      # delegation.
       #
       # @example
       #   # bad
-      #   delegate :name, to: :commission
+      #   delegate :name, to: :author
       #
       #   # bad — same promise, written by hand
       #   def name
-      #     commission.name
+      #     author.name
       #   end
       #
       #   # good — the caller navigates
-      #   statement.commission.name
+      #   post.author.name
       #
       #   # good — the object answers about itself, not for a collaborator
       #   def lock_key
-      #     self.class.lock_key(company_id: company_id)
+      #     self.class.lock_key(owner_id: owner_id)
       #   end
       #
       #   # good — `each` is the Enumerable contract this class implements
@@ -78,12 +80,17 @@ module RuboCop
       #
       #   # good — composes its own attribute, so the caller cannot just navigate
       #   def output
-      #     variable.output(value)
+      #     formatter.output(value)
+      #   end
+      #
+      #   # good — names an expression built from its own record; not a forward
+      #   def lock_key
+      #     Registry.lock_key(owner_id: record.owner_id)
       #   end
       #
       #   # bad — a chain does not stop being a chain because an argument rode along
       #   def starts_at
-      #     commission.plan.period.starts_at(calendar)
+      #     schedule.window.period.starts_at(calendar)
       #   end
       #
       class DisallowDelegate < ::RuboCop::Cop::Base
@@ -169,12 +176,13 @@ module RuboCop
         end
 
         # A method parameter reaches the body as an `lvar`, so only an instance
-        # variable or a receiverless call counts as the object's own state. An
-        # anonymous block pass carries a nil child, hence the first guard.
+        # variable or a receiverless call counts as the object's own state — read
+        # directly, through a wrapper, or through a call on it. An anonymous block
+        # pass carries a nil child, hence the first guard.
         def own_state?(argument)
           return false if argument.nil?
           return true if argument.ivar_type?
-          return true if argument.send_type? && argument.receiver.nil?
+          return argument.receiver.nil? || own_state?(argument.receiver) if argument.send_type?
           return argument.children.any? { |child| own_state?(child) } if wrapper?(argument)
 
           false
