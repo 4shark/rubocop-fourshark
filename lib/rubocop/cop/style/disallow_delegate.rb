@@ -22,20 +22,33 @@ module RuboCop
       # method answers for a domain it owns, so it is not delegation and is not
       # flagged.
       #
-      # `each` in a class that includes `Enumerable` is the module's required
-      # contract, not delegation. The class has no interface without it — every
-      # method `Enumerable` provides is built on `each` — so the class is
+      # `each` in a class that includes or prepends `Enumerable` is the module's
+      # required contract, not delegation. The class has no interface without it
+      # — every method `Enumerable` provides is built on `each` — so the class is
       # implementing its own interface rather than answering for a collaborator.
-      # It is not flagged. Any other method in such a class still is.
+      # It is not flagged. Any other method in such a class still is, and so is
+      # `each` in a singleton class: an instance-side mixin obliges the instance,
+      # never the singleton.
       #
-      # A body that passes the object's own state as an argument is not a
-      # pass-through. Middle Man is a method that republishes a collaborator's
-      # answer verbatim, which the caller could reach by navigating; a method
-      # that supplies its own attributes contributes something the caller would
-      # otherwise have to reach in and take, and the result is a simpler API on
-      # the object that owns the data. Own state is an instance variable or a
-      # receiverless call — a method parameter forwarded through is not, so a
-      # setter passing its argument along stays flagged.
+      # A body that passes the object's own state as an argument to a DIRECT
+      # collaborator is not a pass-through. Middle Man is a method that
+      # republishes a collaborator's answer verbatim, which the caller could
+      # reach by navigating; a method that supplies its own attributes
+      # contributes something the caller would otherwise have to reach in and
+      # take, and the result is a simpler API on the object that owns the data.
+      #
+      # Three limits keep that exemption from swallowing the rule. The receiver
+      # must not itself be a chain — Remove Middle Man on a message chain IS the
+      # caller navigating, so composing own state does not excuse it. Own state
+      # is an instance variable or a receiverless call, so a method parameter
+      # forwarded through does not qualify and a setter stays flagged. And own
+      # state is read through a splat, a double splat, an array or a block pass,
+      # because the wrapper does not change whose state the argument carries.
+      #
+      # An argument derived from own state through another call —
+      # `variable.label(value.to_s)` — is still flagged. Recursing into an
+      # argument's receiver would also exempt `Lock.lock_key(company_id:
+      # user.company_id)`, which is delegation, so the conservative reading wins.
       #
       # @example
       #   # bad
@@ -68,22 +81,32 @@ module RuboCop
       #     variable.output(value)
       #   end
       #
+      #   # bad — a chain does not stop being a chain because an argument rode along
+      #   def starts_at
+      #     commission.plan.period.starts_at(calendar)
+      #   end
+      #
       class DisallowDelegate < ::RuboCop::Cop::Base
         MACRO_MSG = 'Do not use automatic delegation. Delete the forwarder and let the caller navigate.'
         FORWARDER_MSG = 'Do not forward a collaborator\'s message. Delete the forwarder and let the caller navigate.'
 
         RESTRICT_ON_SEND = %i[delegate delegate_missing_to def_delegator def_delegators DelegateClass].freeze
 
+        # An argument reaches the body wrapped in one of these when the call site
+        # spreads or blocks it, and the wrapper says nothing about whose state it
+        # carries.
+        ARGUMENT_WRAPPERS = %i[hash pair array splat kwsplat block_pass].freeze
+
+        # @!method mixes_in_enumerable?(node)
+        def_node_matcher :mixes_in_enumerable?, <<~PATTERN
+          (send nil? {:include :prepend} (const {nil? cbase} :Enumerable))
+        PATTERN
+
         def on_send(node)
           return unless node.receiver.nil?
 
           add_offense(node, message: MACRO_MSG)
         end
-
-        # @!method includes_enumerable?(node)
-        def_node_matcher :includes_enumerable?, <<~PATTERN
-          (send nil? :include (const {nil? cbase} :Enumerable))
-        PATTERN
 
         def on_def(node)
           return unless forwards_own_message?(node.body, node.method_name)
@@ -112,34 +135,53 @@ module RuboCop
           receiver.receiver.self_type?
         end
 
+        # The nearest enclosing scope decides, and a singleton class never
+        # inherits the instance side's mixin.
         def enumerable_contract?(node)
           return false unless node.method?(:each)
 
-          enclosing = node.each_ancestor(:class, :module).first
+          enclosing = node.each_ancestor(:class, :module, :sclass).first
           return false if enclosing.nil?
+          return false if enclosing.sclass_type?
 
           enumerable_body?(enclosing.body)
         end
 
         def enumerable_body?(body)
           return false if body.nil?
-          return body.children.any? { |child| includes_enumerable?(child) } if body.begin_type?
+          return body.children.any? { |child| mixes_in_enumerable?(child) } if body.begin_type?
 
-          includes_enumerable?(body)
+          mixes_in_enumerable?(body)
         end
 
         def composes_own_state?(body)
+          return false if chained_receiver?(body.receiver)
+
           body.arguments.any? { |argument| own_state?(argument) }
         end
 
+        # Remove Middle Man on a message chain IS the caller navigating, so an
+        # argument riding along does not earn the exemption.
+        def chained_receiver?(receiver)
+          return false unless receiver.send_type?
+
+          !receiver.receiver.nil?
+        end
+
         # A method parameter reaches the body as an `lvar`, so only an instance
-        # variable or a receiverless call counts as the object's own state.
+        # variable or a receiverless call counts as the object's own state. An
+        # anonymous block pass carries a nil child, hence the first guard.
         def own_state?(argument)
+          return false if argument.nil?
           return true if argument.ivar_type?
           return true if argument.send_type? && argument.receiver.nil?
-          return argument.values.any? { |value| own_state?(value) } if argument.hash_type?
+          return argument.children.any? { |child| own_state?(child) } if wrapper?(argument)
 
           false
+        end
+
+        def wrapper?(argument)
+          ARGUMENT_WRAPPERS.include?(argument.type)
         end
       end
     end

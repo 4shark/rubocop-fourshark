@@ -1,3 +1,12 @@
+## [Unreleased]
+
+### Fixed
+
+- `Style/DisallowDelegate` — own state passed through a splat, a double splat, an array or a block is no longer flagged
+- `Style/DisallowDelegate` — `each` in a class prepending `Enumerable` is no longer flagged
+- `Style/DisallowDelegate` — a chained receiver carrying an own state argument is flagged again
+- `Style/DisallowDelegate` — `each` in a singleton class is flagged again
+
 ## [0.8.2] - 2026-08-06
 
 ### Fixed
