@@ -63,10 +63,10 @@ RSpec.describe RuboCop::Cop::RSpec::InverseOfMatcher, :config do
 
   context 'when the model is a nested class that is itself a root' do
     before do
-      deal_document_row = <<~MODEL
-        class DealDocument < Document
+      invoice_row = <<~MODEL
+        class Invoice < Document
           class Row < ApplicationRecord
-            belongs_to :deal_document, inverse_of: :rows, optional: true
+            belongs_to :invoice, inverse_of: :rows, optional: true
           end
         end
       MODEL
@@ -74,22 +74,22 @@ RSpec.describe RuboCop::Cop::RSpec::InverseOfMatcher, :config do
       document = "class Document < ApplicationRecord\nend"
 
       allow_any_instance_of(described_class).to receive(:model_source) do |_cop, name|
-        { 'DealDocument::Row' => deal_document_row, 'Document' => document }[name]
+        { 'Invoice::Row' => invoice_row, 'Document' => document }[name]
       end
     end
 
     it 'classifies the nested class by its own superclass, not the wrapper' do
-      expect_no_offenses(<<~RUBY, 'spec/models/deal_document/row_spec.rb')
-        RSpec.describe DealDocument::Row do
-          it { is_expected.to belong_to(:deal_document).inverse_of(:rows) }
+      expect_no_offenses(<<~RUBY, 'spec/models/invoice/row_spec.rb')
+        RSpec.describe Invoice::Row do
+          it { is_expected.to belong_to(:invoice).inverse_of(:rows) }
         end
       RUBY
     end
 
     it 'registers an offense when the nested root association lacks .inverse_of' do
-      expect_offense(<<~RUBY, 'spec/models/deal_document/row_spec.rb')
-        RSpec.describe DealDocument::Row do
-          it { is_expected.to belong_to(:deal_document) }
+      expect_offense(<<~RUBY, 'spec/models/invoice/row_spec.rb')
+        RSpec.describe Invoice::Row do
+          it { is_expected.to belong_to(:invoice) }
                               ^^^^^^^^^ Root models must include `.inverse_of` in association specs.
         end
       RUBY

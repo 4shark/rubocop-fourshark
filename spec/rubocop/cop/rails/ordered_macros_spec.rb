@@ -47,24 +47,24 @@ RSpec.describe RuboCop::Cop::Rails::OrderedMacros, :config do
 
   it 'does not flag a :through association that follows the regular ones' do
     expect_no_offenses(<<~RUBY)
-      class Indicator < ApplicationRecord
-        has_many :eligible_indicators, inverse_of: :indicator
-        has_many :enrollments, inverse_of: :indicator
+      class Order < ApplicationRecord
+        has_many :line_items, inverse_of: :order
+        has_many :shipments, inverse_of: :order
 
-        has_many :documents, through: :enrollments
-        has_many :eligibility_periods, through: :eligible_indicators
+        has_many :carriers, through: :shipments
+        has_many :products, through: :line_items
       end
     RUBY
   end
 
   it 'registers an offense for unsorted :through associations within their own group' do
     expect_offense(<<~RUBY)
-      class Indicator < ApplicationRecord
-        has_many :enrollments, inverse_of: :indicator
+      class Order < ApplicationRecord
+        has_many :shipments, inverse_of: :order
 
-        has_many :eligibility_periods, through: :eligible_indicators
-        has_many :documents, through: :enrollments
-        ^^^^^^^^ Sort `has_many` declarations alphabetically (`documents` should come before `eligibility_periods`).
+        has_many :products, through: :line_items
+        has_many :carriers, through: :shipments
+        ^^^^^^^^ Sort `has_many` declarations alphabetically (`carriers` should come before `products`).
       end
     RUBY
   end

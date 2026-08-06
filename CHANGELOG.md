@@ -3,6 +3,9 @@
 ### Fixed
 
 - `Style/DisallowDelegate` — own state reached through a call on it is no longer flagged
+- `Style/DisallowDelegate` — an argument rooted at the collaborator being forwarded to is flagged again
+- `Style/DisallowDelegate` — own state read through an explicit `self` is no longer flagged
+- `Style/DisallowDelegate` — a call reached through safe navigation counts as the call it is, on both the receiver and the argument side
 
 ## [0.8.3] - 2026-08-06
 

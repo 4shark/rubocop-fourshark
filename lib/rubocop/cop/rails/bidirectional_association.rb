@@ -141,7 +141,7 @@ module RuboCop
         #
         # Example:
         #   "UserAccount" → "user_account"
-        #   "PlanStatementAudit::Row" → "plan_statement_audit/row"
+        #   "InvoiceLineItem::Row" → "invoice_line_item/row"
         def camel_to_snake(name)
           return '' if name.nil?
 
