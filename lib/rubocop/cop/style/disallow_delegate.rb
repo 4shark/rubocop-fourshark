@@ -17,6 +17,11 @@ module RuboCop
       # the forwarder by hand changes what `grep` finds, not what the class
       # claims to be responsible for.
       #
+      # `self.class` is not a collaborator — it is the object's own class. An
+      # instance method that composes its own attributes into a same-named class
+      # method answers for a domain it owns, so it is not delegation and is not
+      # flagged.
+      #
       # @example
       #   # bad
       #   delegate :name, to: :commission
@@ -28,6 +33,11 @@ module RuboCop
       #
       #   # good — the caller navigates
       #   statement.commission.name
+      #
+      #   # good — the object answers about itself, not for a collaborator
+      #   def lock_key
+      #     self.class.lock_key(company_id: company_id)
+      #   end
       #
       class DisallowDelegate < ::RuboCop::Cop::Base
         MACRO_MSG = 'Do not use automatic delegation. Delete the forwarder and let the caller navigate.'
@@ -53,8 +63,17 @@ module RuboCop
           return false if body.nil?
           return false unless body.send_type?
           return false if body.receiver.nil?
+          return false if own_class?(body.receiver)
 
           body.method?(method_name)
+        end
+
+        def own_class?(receiver)
+          return false unless receiver.send_type?
+          return false unless receiver.method?(:class)
+          return false if receiver.receiver.nil?
+
+          receiver.receiver.self_type?
         end
       end
     end

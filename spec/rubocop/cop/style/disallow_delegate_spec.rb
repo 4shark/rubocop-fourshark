@@ -119,4 +119,38 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
       end
     RUBY
   end
+
+  it 'does not register an offense for a method composing its attributes into its own class method' do
+    expect_no_offenses(<<~RUBY)
+      def lock_key
+        self.class.lock_key(company_id: company_id)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for a method forwarding to its own class without arguments' do
+    expect_no_offenses(<<~RUBY)
+      def cache_ttl
+        self.class.cache_ttl
+      end
+    RUBY
+  end
+
+  it 'registers an offense for a method forwarding to a collaborator class method' do
+    expect_offense(<<~RUBY)
+      def lock_key
+          ^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        Lock.lock_key(company_id: company_id)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for a method forwarding to a collaborator own class' do
+    expect_offense(<<~RUBY)
+      def lock_key
+          ^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        audit.class.lock_key(company_id: company_id)
+      end
+    RUBY
+  end
 end
