@@ -22,6 +22,21 @@ module RuboCop
       # method answers for a domain it owns, so it is not delegation and is not
       # flagged.
       #
+      # `each` in a class that includes `Enumerable` is the module's required
+      # contract, not delegation. The class has no interface without it — every
+      # method `Enumerable` provides is built on `each` — so the class is
+      # implementing its own interface rather than answering for a collaborator.
+      # It is not flagged. Any other method in such a class still is.
+      #
+      # A body that passes the object's own state as an argument is not a
+      # pass-through. Middle Man is a method that republishes a collaborator's
+      # answer verbatim, which the caller could reach by navigating; a method
+      # that supplies its own attributes contributes something the caller would
+      # otherwise have to reach in and take, and the result is a simpler API on
+      # the object that owns the data. Own state is an instance variable or a
+      # receiverless call — a method parameter forwarded through is not, so a
+      # setter passing its argument along stays flagged.
+      #
       # @example
       #   # bad
       #   delegate :name, to: :commission
@@ -39,6 +54,20 @@ module RuboCop
       #     self.class.lock_key(company_id: company_id)
       #   end
       #
+      #   # good — `each` is the Enumerable contract this class implements
+      #   class SearchResult
+      #     include Enumerable
+      #
+      #     def each(&)
+      #       results.each(&)
+      #     end
+      #   end
+      #
+      #   # good — composes its own attribute, so the caller cannot just navigate
+      #   def output
+      #     variable.output(value)
+      #   end
+      #
       class DisallowDelegate < ::RuboCop::Cop::Base
         MACRO_MSG = 'Do not use automatic delegation. Delete the forwarder and let the caller navigate.'
         FORWARDER_MSG = 'Do not forward a collaborator\'s message. Delete the forwarder and let the caller navigate.'
@@ -51,8 +80,15 @@ module RuboCop
           add_offense(node, message: MACRO_MSG)
         end
 
+        # @!method includes_enumerable?(node)
+        def_node_matcher :includes_enumerable?, <<~PATTERN
+          (send nil? :include (const {nil? cbase} :Enumerable))
+        PATTERN
+
         def on_def(node)
           return unless forwards_own_message?(node.body, node.method_name)
+          return if enumerable_contract?(node)
+          return if composes_own_state?(node.body)
 
           add_offense(node.loc.name, message: FORWARDER_MSG)
         end
@@ -74,6 +110,36 @@ module RuboCop
           return false if receiver.receiver.nil?
 
           receiver.receiver.self_type?
+        end
+
+        def enumerable_contract?(node)
+          return false unless node.method?(:each)
+
+          enclosing = node.each_ancestor(:class, :module).first
+          return false if enclosing.nil?
+
+          enumerable_body?(enclosing.body)
+        end
+
+        def enumerable_body?(body)
+          return false if body.nil?
+          return body.children.any? { |child| includes_enumerable?(child) } if body.begin_type?
+
+          includes_enumerable?(body)
+        end
+
+        def composes_own_state?(body)
+          body.arguments.any? { |argument| own_state?(argument) }
+        end
+
+        # A method parameter reaches the body as an `lvar`, so only an instance
+        # variable or a receiverless call counts as the object's own state.
+        def own_state?(argument)
+          return true if argument.ivar_type?
+          return true if argument.send_type? && argument.receiver.nil?
+          return argument.values.any? { |value| own_state?(value) } if argument.hash_type?
+
+          false
         end
       end
     end
