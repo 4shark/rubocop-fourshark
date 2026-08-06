@@ -241,4 +241,118 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
       end
     RUBY
   end
+
+  it 'does not register an offense for own state passed through a splat' do
+    expect_no_offenses(<<~RUBY)
+      def output
+        variable.output(*items)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for own state passed through a double splat' do
+    expect_no_offenses(<<~RUBY)
+      def options
+        variable.options(**settings)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for own state passed through an array' do
+    expect_no_offenses(<<~RUBY)
+      def values
+        variable.values([value])
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for own state passed through a block' do
+    expect_no_offenses(<<~RUBY)
+      def each
+        results.each(&@handler)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for own state reached through another call' do
+    expect_offense(<<~RUBY)
+      def label
+          ^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        variable.label(value.to_s)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for a chained receiver carrying an own state argument' do
+    expect_offense(<<~RUBY)
+      def starts_at
+          ^^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        commission.plan.period.starts_at(calendar)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for an instance variable receiver carrying an own state argument' do
+    expect_no_offenses(<<~RUBY)
+      def id
+        @calendar_audit.id(scope)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for a direct collaborator carrying an own state argument' do
+    expect_no_offenses(<<~RUBY)
+      def name
+        commission.name(locale)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for each in a class prepending Enumerable' do
+    expect_no_offenses(<<~RUBY)
+      class SearchResult
+        prepend Enumerable
+
+        def each(&)
+          results.each(&)
+        end
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for each in a module including Enumerable' do
+    expect_no_offenses(<<~RUBY)
+      module Collection
+        include Enumerable
+
+        def each(&)
+          results.each(&)
+        end
+      end
+    RUBY
+  end
+
+  it 'registers an offense for each in a singleton class of a class including Enumerable' do
+    expect_offense(<<~RUBY)
+      class SearchResult
+        include Enumerable
+
+        class << self
+          def each(&)
+              ^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+            results.each(&)
+          end
+        end
+      end
+    RUBY
+  end
+
+  it 'registers an offense for each outside any class' do
+    expect_offense(<<~RUBY)
+      def each(&)
+          ^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        results.each(&)
+      end
+    RUBY
+  end
 end

@@ -76,7 +76,7 @@ Where a 4Shark cop supersedes or contradicts a stock cop, `config/default.yml` t
 
 | Cop | Intent |
 |---|---|
-| `Style/DisallowDelegate` | Flags automatic delegation (`delegate`, `delegate_missing_to`, `def_delegator(s)`, `DelegateClass`). A `delegate` line is a macro call, not a definition, so `grep 'def foo'` and jump-to-definition find nothing — the community name for the smell is Fowler's Middle Man. Write the method, or let the caller ask the object that knows. |
+| `Style/DisallowDelegate` | Flags automatic delegation (`delegate`, `delegate_missing_to`, `def_delegator(s)`, `DelegateClass`) and a hand-written method whose whole body forwards its own name to a collaborator. A `delegate` line is a macro call, not a definition, so `grep 'def foo'` and jump-to-definition find nothing — the community name for the smell is Fowler's Middle Man. Not flagged: a method answering through its own `self.class`, `each` in a class that includes or prepends `Enumerable`, and a body composing the object's own state into a call on a direct collaborator. Let the caller ask the object that knows. |
 | `Style/DisallowSafeNavigation` | Flags safe navigation (`&.`). 4Shark rejects it — a `&.` chain silently swallows a `nil` that usually signals a real bug. Use an explicit conditional so the `nil` case is handled on purpose. |
 | `Style/DisallowTernary` | Flags the ternary conditional (`cond ? a : b`). `?` and `:` are punctuation that already mean other things in Ruby (`valid?`, `:symbol`), and the ternary hides a branch inside an expression where skimming misses it. Use an explicit `if`/`else`. |
 | `Style/DisallowTry` | Flags `try` / `try!`. Same rationale — it hides the `nil`/missing-method case instead of handling it explicitly. |
