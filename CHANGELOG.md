@@ -1,8 +1,12 @@
-## [Unreleased]
+## [0.8.5] - 2026-08-07
 
 ### Changed
 
 - Convention rationale in the README
+
+### Fixed
+
+- `Style/DisallowDelegate` — a macro aimed at the object's own class is no longer flagged
 
 ## [0.8.4] - 2026-08-07
 

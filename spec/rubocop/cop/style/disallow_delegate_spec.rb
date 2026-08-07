@@ -46,6 +46,44 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     RUBY
   end
 
+  it 'does not register an offense for delegate aimed at the own class' do
+    expect_no_offenses(<<~RUBY)
+      delegate :model, to: :class
+    RUBY
+  end
+
+  it 'does not register an offense for delegate aimed at the own class by string' do
+    expect_no_offenses(<<~RUBY)
+      delegate :model, to: 'class'
+    RUBY
+  end
+
+  it 'does not register an offense for several methods aimed at the own class' do
+    expect_no_offenses(<<~RUBY)
+      delegate :scope_class, :model, :order, to: :class
+    RUBY
+  end
+
+  it 'does not register an offense for delegate_missing_to aimed at the own class' do
+    expect_no_offenses(<<~RUBY)
+      delegate_missing_to :class
+    RUBY
+  end
+
+  it 'registers an offense for delegate aimed at a collaborator named after a class' do
+    expect_offense(<<~RUBY)
+      delegate :model, to: :klass
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^ Do not use automatic delegation. Delete the forwarder and let the caller navigate.
+    RUBY
+  end
+
+  it 'registers an offense for delegate aimed at an instance variable' do
+    expect_offense(<<~RUBY)
+      delegate :model, to: :@resolver
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Do not use automatic delegation. Delete the forwarder and let the caller navigate.
+    RUBY
+  end
+
   it 'registers an offense for a method forwarding its own name to a collaborator' do
     expect_offense(<<~RUBY)
       def name
