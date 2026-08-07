@@ -22,6 +22,13 @@ module RuboCop
       # method answers for a domain it owns, so it is not delegation and is not
       # flagged.
       #
+      # A macro aimed at `:class` reaches the same place and is exempt for the
+      # same reason. Remove Middle Man has nothing to prescribe here: there is no
+      # third object for the caller to navigate to, so the only alternatives are
+      # the macro and a hand-written body that says exactly what the macro says.
+      # Between those two the macro is the better spelling, and flagging it while
+      # exempting the body would push every author toward the longer one.
+      #
       # `each` in a class that includes or prepends `Enumerable` is the module's
       # required contract, not delegation. The class has no interface without it
       # — every method `Enumerable` provides is built on `each` — so the class is
@@ -79,6 +86,10 @@ module RuboCop
       #     self.class.lock_key(owner_id: owner_id)
       #   end
       #
+      #   # good — aimed at the object's own class, where there is no third
+      #   # object to navigate to
+      #   delegate :model, to: :class
+      #
       #   # good — `each` is the Enumerable contract this class implements
       #   class SearchResult
       #     include Enumerable
@@ -124,8 +135,23 @@ module RuboCop
           (send nil? {:include :prepend} (const {nil? cbase} :Enumerable))
         PATTERN
 
+        # `delegate` names its target in a `to:` option, wherever that option
+        # sits among the forwarded method names.
+        # @!method to_option(node)
+        def_node_matcher :to_option, <<~PATTERN
+          (send nil? :delegate ... (hash <(pair (sym :to) $_) ...>))
+        PATTERN
+
+        # The Forwardable macros and `delegate_missing_to` take their target as
+        # the first argument. `DelegateClass` names none and never matches.
+        # @!method leading_target(node)
+        def_node_matcher :leading_target, <<~PATTERN
+          (send nil? {:delegate_missing_to :def_delegator :def_delegators} $_ ...)
+        PATTERN
+
         def on_send(node)
           return unless node.receiver.nil?
+          return if own_class_target?(node)
 
           add_offense(node, message: MACRO_MSG)
         end
@@ -139,6 +165,16 @@ module RuboCop
         end
 
         private
+
+        # The target is written as a bare name, so a symbol and a string say the
+        # same thing and both are read as one.
+        def own_class_target?(node)
+          target = to_option(node) || leading_target(node)
+          return false if target.nil?
+          return false unless target.type?(:sym, :str)
+
+          target.value.to_sym == :class
+        end
 
         def forwards_own_message?(body, method_name)
           return false if body.nil?
