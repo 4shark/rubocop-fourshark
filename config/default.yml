@@ -16,8 +16,8 @@ Layout/MultilineMethodCallIndentation:
 
 # Stock cop configured (not a 4Shark cop): name the rescued exception variable
 # `exception`. The cop's default is `e`, and a single-letter variable is banned by
-# the 4Shark naming convention — so the two disagree on every rescue in the
-# codebase. `PreferredName` is the option the cop ships to settle exactly that,
+# the 4Shark naming convention — so the two disagree wherever a rescue binds its
+# exception. `PreferredName` is the option the cop ships to settle exactly that,
 # and the cop autocorrects, so the rename is mechanical.
 Naming/RescuedExceptionsVariableName:
   PreferredName: exception
