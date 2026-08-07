@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Changed
+
+- Convention rationale in the README
+
 ## [0.8.4] - 2026-08-07
 
 ### Fixed
