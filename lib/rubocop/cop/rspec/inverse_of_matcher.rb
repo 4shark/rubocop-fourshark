@@ -127,7 +127,7 @@ module RuboCop
           match && match[1]
         end
 
-        # "UserAccount" → "user_account"; "Plan::Statement" → "plan/statement"
+        # "UserAccount" → "user_account"; "Order::LineItem" → "order/line_item"
         def camel_to_snake(name)
           name.gsub('::', '/')
             .gsub(/([A-Z\d]+)([A-Z][a-z])/, '\1_\2')

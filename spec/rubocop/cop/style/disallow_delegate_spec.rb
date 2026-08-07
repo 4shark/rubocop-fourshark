@@ -250,6 +250,102 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     RUBY
   end
 
+  it 'registers an offense for a setter forwarding its own parameter through a call' do
+    expect_offense(<<~RUBY)
+      def output=(value)
+          ^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        formatter.output = value.to_s
+      end
+    RUBY
+  end
+
+  it 'registers an offense for a method composing a constant into the call' do
+    expect_offense(<<~RUBY)
+      def lock_key
+          ^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        Registry.lock_key(owner_id: Defaults.owner_id)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for an argument rooted at the collaborator' do
+    expect_offense(<<~RUBY)
+      def name
+          ^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        author.name(author.locale)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for an argument rooted at an instance variable collaborator' do
+    expect_offense(<<~RUBY)
+      def id
+          ^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        @account.id(@account.scope)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for an argument rooted at the collaborator through safe navigation' do
+    expect_offense(<<~RUBY)
+      def name
+          ^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        author.name(author&.locale)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for a chained receiver linked by safe navigation' do
+    expect_offense(<<~RUBY)
+      def name
+          ^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        author&.profile.name(owner_id)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for own state reached through safe navigation' do
+    expect_no_offenses(<<~RUBY)
+      def name
+        author.name(profile&.locale)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for an argument rooted at the collaborator inside a wrapper' do
+    expect_offense(<<~RUBY)
+      def name
+          ^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        author.name([author.locale])
+      end
+    RUBY
+  end
+
+  it 'registers an offense for the collaborator passed back as the argument' do
+    expect_offense(<<~RUBY)
+      def name
+          ^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        author.name(author)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for own state reached through a chain of any depth' do
+    expect_no_offenses(<<~RUBY)
+      def name
+        author.name(profile.address.locale)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for own state read through an explicit self' do
+    expect_no_offenses(<<~RUBY)
+      def lock_key
+        Registry.lock_key(owner_id: self.owner_id)
+      end
+    RUBY
+  end
+
   it 'does not register an offense for own state passed through a splat' do
     expect_no_offenses(<<~RUBY)
       def output

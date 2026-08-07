@@ -37,20 +37,30 @@ module RuboCop
       # contributes something the caller would otherwise have to reach in and
       # take, and the result is a simpler API on the object that owns the data.
       #
-      # Own state is an instance variable or a receiverless call, reached
-      # directly, through a wrapper, or through a call on it — `record`,
+      # Own state is an instance variable, `self`, or a receiverless call,
+      # reached directly, through a wrapper, or through a call on it — `record`,
       # `record.owner_id` and `[record.owner_id]` all carry the object's own
       # data. A method PARAMETER does not: it arrives as an `lvar`, so a setter
       # handing its argument to a collaborator stays flagged.
       #
-      # One limit keeps the exemption from swallowing the rule: the receiver must
-      # not itself be a chain. Remove Middle Man on a message chain IS the caller
-      # navigating, so composing own state does not excuse it.
+      # Two limits keep the exemption from swallowing the rule.
       #
-      # A forward that passes NO argument is the one that republishes, and it is
-      # always flagged. That is the line — supplying data the collaborator needs
-      # is composition, echoing back what the collaborator already knows is
-      # delegation.
+      # The receiver must not itself be a chain. Remove Middle Man on a message
+      # chain IS the caller navigating, so composing own state does not excuse
+      # it.
+      #
+      # An argument rooted at the collaborator being forwarded to does not earn
+      # the exemption. `author.name(author.locale)` hands the collaborator back
+      # its own data, which is the echo this rule forbids, not composition, so
+      # with no other argument to carry it the forward stays flagged. Rooted at
+      # the object's OWN state the argument may be a chain of any depth — the
+      # object still supplied what the collaborator needed, and how far it
+      # reached inside itself to build the value is its own business.
+      #
+      # A forward to a collaborator that passes NO argument is the one that
+      # republishes, and it is always flagged. That is the line — supplying data
+      # the collaborator needs is composition, echoing back what the collaborator
+      # already knows is delegation.
       #
       # @example
       #   # bad
@@ -91,6 +101,11 @@ module RuboCop
       #   # bad — a chain does not stop being a chain because an argument rode along
       #   def starts_at
       #     schedule.window.period.starts_at(calendar)
+      #   end
+      #
+      #   # bad — the argument is the collaborator's own data handed back to it
+      #   def name
+      #     author.name(author.locale)
       #   end
       #
       class DisallowDelegate < ::RuboCop::Cop::Base
@@ -161,31 +176,41 @@ module RuboCop
           mixes_in_enumerable?(body)
         end
 
-        def composes_own_state?(body)
-          return false if chained_receiver?(body.receiver)
-
-          body.arguments.any? { |argument| own_state?(argument) }
-        end
-
         # Remove Middle Man on a message chain IS the caller navigating, so an
         # argument riding along does not earn the exemption.
-        def chained_receiver?(receiver)
-          return false unless receiver.send_type?
+        def composes_own_state?(body)
+          return false if call_with_receiver?(body.receiver)
 
-          !receiver.receiver.nil?
+          body.arguments.any? { |argument| own_state?(argument, body.receiver) }
         end
 
         # A method parameter reaches the body as an `lvar`, so only an instance
-        # variable or a receiverless call counts as the object's own state — read
-        # directly, through a wrapper, or through a call on it. An anonymous block
-        # pass carries a nil child, hence the first guard.
-        def own_state?(argument)
-          return false if argument.nil?
+        # variable, `self`, or a receiverless call counts as the object's own
+        # state — read directly, through a wrapper, or through a call on it.
+        # Anything rooted at the collaborator is that collaborator's own data
+        # coming back, which is the echo the rule forbids. The first guard
+        # refuses anything that is not a node, which covers both the nil child
+        # an anonymous block pass carries and a wrapper whose children are raw
+        # Ruby values rather than nodes.
+        def own_state?(argument, collaborator)
+          return false unless argument.is_a?(::RuboCop::AST::Node)
+          return false if argument == collaborator
           return true if argument.ivar_type?
-          return argument.receiver.nil? || own_state?(argument.receiver) if argument.send_type?
-          return argument.children.any? { |child| own_state?(child) } if wrapper?(argument)
+          return true if argument.self_type?
+          return own_state?(argument.receiver, collaborator) if call_with_receiver?(argument)
+          return true if argument.send_type?
+          return argument.children.any? { |child| own_state?(child, collaborator) } if wrapper?(argument)
 
           false
+        end
+
+        # `call_type?` is the `send`/`csend` union, so safe navigation counts as
+        # the call it is — a `&.` link neither escapes the chain limit nor stops
+        # own state from being recognized.
+        def call_with_receiver?(node)
+          return false unless node.call_type?
+
+          !node.receiver.nil?
         end
 
         def wrapper?(argument)
