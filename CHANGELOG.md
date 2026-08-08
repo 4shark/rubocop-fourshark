@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+
+- `Style/DisallowDelegate` — a chained receiver carrying an own state argument is no longer flagged
+
 ## [0.8.5] - 2026-08-07
 
 ### Changed

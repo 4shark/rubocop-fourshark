@@ -191,7 +191,7 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     expect_offense(<<~RUBY)
       def lock_key
           ^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        post.class.lock_key(owner_id: user.owner_id)
+        post.class.lock_key
       end
     RUBY
   end
@@ -333,11 +333,19 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     RUBY
   end
 
-  it 'registers an offense for a chained receiver linked by safe navigation' do
+  it 'does not register an offense for own state through a receiver chained by safe navigation' do
+    expect_no_offenses(<<~RUBY)
+      def name
+        author&.profile.name(owner_id)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for a receiver chained by safe navigation carrying no argument' do
     expect_offense(<<~RUBY)
       def name
           ^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        author&.profile.name(owner_id)
+        author&.profile.name
       end
     RUBY
   end
@@ -424,9 +432,17 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     RUBY
   end
 
-  it 'registers an offense for a chained receiver carrying an own state argument' do
-    expect_offense(<<~RUBY)
+  it 'does not register an offense for a chained receiver carrying an own state argument' do
+    expect_no_offenses(<<~RUBY)
       def starts_at
+        schedule.window.period.starts_at(calendar)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for a chained receiver carrying a method parameter' do
+    expect_offense(<<~RUBY)
+      def starts_at(calendar)
           ^^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
         schedule.window.period.starts_at(calendar)
       end
