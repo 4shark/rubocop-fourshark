@@ -212,11 +212,14 @@ module RuboCop
           mixes_in_enumerable?(body)
         end
 
-        # Remove Middle Man on a message chain IS the caller navigating, so an
-        # argument riding along does not earn the exemption.
+        # A body that passes the object's own state is composing, not forwarding:
+        # it collapses `owner.collaborator.message(owner.state)` into
+        # `owner.message`, so the method hides the passing of a parameter the
+        # object itself holds. How far the collaborator sits is not part of that
+        # judgement — depth changes the path to the collaborator, never who the
+        # answer is about. A body that passes nothing, or passes a parameter the
+        # caller handed in, composes nothing and stays an offense at any depth.
         def composes_own_state?(body)
-          return false if call_with_receiver?(body.receiver)
-
           body.arguments.any? { |argument| own_state?(argument, body.receiver) }
         end
 
