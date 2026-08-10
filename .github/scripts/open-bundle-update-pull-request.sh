@@ -4,7 +4,9 @@
 # Renovate updates the dependencies declared in the Gemfile; the ones those
 # dependencies pull in transitively only move when a declared dependency drags
 # them along. This script carries the rest: the weekly workflow re-resolves the
-# whole lockfile and this turns the resulting diff into a reviewable PR.
+# transitive dependencies and nothing else, and this turns the resulting diff
+# into a reviewable PR. A declared dependency never appears here — it keeps the
+# version it is locked to until Renovate proposes a bump of its own.
 #
 # The branch name is fixed, so a run whose diff differs from the open PR updates
 # that PR in place instead of stacking a new one every week.
@@ -18,7 +20,7 @@
 set -euo pipefail
 
 BRANCH_NAME="chore/bundle-update"
-COMMIT_SUBJECT="chore(deps): update the resolved dependency versions"
+COMMIT_SUBJECT="chore(deps): update the transitive dependency versions"
 BOT_NAME="github-actions[bot]"
 BOT_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -27,7 +29,7 @@ BOT_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
 : "${GITHUB_REF_NAME:?GITHUB_REF_NAME is required}"
 
 if git diff --quiet -- Gemfile.lock; then
-  echo "Gemfile.lock is unchanged; every resolved version is already current."
+  echo "Gemfile.lock is unchanged; every transitive version is already current."
   exit 0
 fi
 
@@ -53,8 +55,10 @@ gh pr create \
   --base "$BASE_BRANCH" \
   --head "$BRANCH_NAME" \
   --title "$COMMIT_SUBJECT" \
-  --body "Re-resolved every version in \`Gemfile.lock\`, including the dependencies pulled in transitively, which Renovate leaves untouched.
+  --body "Re-resolved the dependencies pulled in transitively, which Renovate leaves untouched because no manifest declares them.
 
-No version in this diff was published within the minimum release age — Bundler's own cooldown enforces that during resolution, so the age gate covers transitive dependencies as well.
+Every dependency the repository does declare kept the version it was locked to — the job compares them before and after and fails if one moved, so a direct-dependency bump only ever arrives through a pull request of its own.
+
+No version in this diff was published within the minimum release age — Bundler's own cooldown enforces that during resolution.
 
 The diff is limited to \`Gemfile.lock\`; nothing declared in the \`Gemfile\` changed."
