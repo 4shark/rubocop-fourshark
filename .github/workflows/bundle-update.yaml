@@ -30,8 +30,8 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
-      - name: Update every dependency the lockfile resolves
-        run: bundle config set frozen false && bundle update --all
+      - name: Update the dependencies nothing in the repository declares
+        run: bash .github/scripts/update-transitive-dependencies.sh
         env:
           BUNDLE_COOLDOWN: ${{ vars.DEPENDENCY_MINIMUM_RELEASE_AGE_DAYS }}
         timeout-minutes: 10
