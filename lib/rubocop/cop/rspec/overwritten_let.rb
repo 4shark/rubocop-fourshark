@@ -41,9 +41,11 @@ module RuboCop
           return unless LET_METHODS.include?(node.method_name) && node.receiver.nil?
 
           name = let_name(node)
+
           return unless name
 
           immediate_group = node.each_ancestor(:block).find { |block| example_group?(block) }
+
           return unless immediate_group
           return unless outer_groups(immediate_group).any? { |group| defines_let?(group, name) }
 
@@ -63,6 +65,7 @@ module RuboCop
 
         def defines_let?(group, name)
           body = group.body
+
           return false unless body
 
           statements = if body.begin_type?
@@ -92,6 +95,7 @@ module RuboCop
 
         def let_name(node)
           first = node.first_argument
+
           return first.value if first && first.sym_type?
 
           nil

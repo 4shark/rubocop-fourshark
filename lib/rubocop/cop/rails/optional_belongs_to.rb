@@ -38,6 +38,7 @@ module RuboCop
 
         def optional_true?(node)
           kwargs = node.last_argument
+
           return false if !kwargs || !kwargs.hash_type?
 
           kwargs.pairs.any? { |pair| pair.key.value == :optional && pair.value.true_type? }

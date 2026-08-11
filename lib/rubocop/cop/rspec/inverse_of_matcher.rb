@@ -33,12 +33,15 @@ module RuboCop
           return unless node.method?(:belong_to)
 
           model_name = model_class_from_spec
+
           return unless model_name
 
           association_name = association_name_from(node)
+
           return if association_name && polymorphic_in_model?(model_name, association_name)
 
           classification = classify_model(model_name)
+
           return if classification == :non_ar
 
           if classification == :root
@@ -66,6 +69,7 @@ module RuboCop
         # The association name passed to the matcher, e.g. belong_to(:user) -> :user
         def association_name_from(node)
           argument = node.first_argument
+
           return nil unless argument && argument.sym_type?
 
           argument.value
@@ -76,6 +80,7 @@ module RuboCop
         # and the declaration lives in the model, not in the spec matcher chain.
         def polymorphic_in_model?(model_name, association_name)
           content = model_source(model_name)
+
           return false unless content
 
           content.match?(/belongs_to\s+:#{Regexp.escape(association_name.to_s)}\b[^\n]*polymorphic:\s*true/)
@@ -84,12 +89,15 @@ module RuboCop
         # Convert spec file path into model class name
         def model_class_from_spec
           path = processed_source.file_path if processed_source && processed_source.buffer
+
           return nil unless path
 
           match = path.match(%r{spec/models/(.+)_spec\.rb})
+
           return nil unless match
 
           relative = match[1]
+
           return nil if relative.empty?
 
           relative.split('/').map { |part| part.split('_').map(&:capitalize).join }.join('::')
@@ -99,9 +107,11 @@ module RuboCop
         # model file statically (no class loading).
         def classify_model(model_name)
           content = model_source(model_name)
+
           return :non_ar unless content
 
           superclass = superclass_of(content, model_name)
+
           return :non_ar unless superclass
           return :root if superclass == 'ApplicationRecord'
           return :subclass if model_source(superclass)
@@ -113,6 +123,7 @@ module RuboCop
 
         def model_source(model_name)
           path = File.join(Dir.pwd, 'app/models', "#{camel_to_snake(model_name)}.rb")
+
           return File.read(path) if File.exist?(path)
 
           nil
