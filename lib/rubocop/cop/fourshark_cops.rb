@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'factory_bot/association_in_factory'
+require_relative 'layout/empty_line_before_guard_clause'
 require_relative 'layout/multiline_statement_spacing'
 require_relative 'rails/bidirectional_association'
 require_relative 'rails/mandatory_inverse_of'

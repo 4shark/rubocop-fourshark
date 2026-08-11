@@ -170,6 +170,7 @@ module RuboCop
         # same thing and both are read as one.
         def own_class_target?(node)
           target = to_option(node) || leading_target(node)
+
           return false if target.nil?
           return false unless target.type?(:sym, :str)
 
@@ -199,6 +200,7 @@ module RuboCop
           return false unless node.method?(:each)
 
           enclosing = node.each_ancestor(:class, :module, :sclass).first
+
           return false if enclosing.nil?
           return false if enclosing.sclass_type?
 

@@ -33,6 +33,7 @@ module RuboCop
           return unless container_block?(node)
 
           body = node.body
+
           return unless body
 
           statements = if body.begin_type?

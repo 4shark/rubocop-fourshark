@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Added
+
+- `Layout/EmptyLineBeforeGuardClause` — a guard clause that follows ordinary code must be preceded by a blank line
+
 ## [0.8.6] - 2026-08-08
 
 ### Fixed

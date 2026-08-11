@@ -43,6 +43,7 @@ module RuboCop
             next if model_name.nil? || target_class.nil?
 
             opposite_model_path = File.join(Dir.pwd, "app/models/#{camel_to_snake(target_class)}.rb")
+
             next unless File.exist?(opposite_model_path)
 
             opposite_content = File.read(opposite_model_path)
@@ -107,6 +108,7 @@ module RuboCop
         # plain symbol (string keys, double-splats) are skipped rather than read.
         def option_pair(node, key)
           kwargs = node.last_argument
+
           return nil unless kwargs.respond_to?(:hash_type?) && kwargs.hash_type?
 
           kwargs.pairs.find { |pair| pair.key.sym_type? && pair.key.value == key }
@@ -125,6 +127,7 @@ module RuboCop
 
         def class_name_from_ast
           class_node = processed_source.ast.each_descendant(:class).first
+
           return nil unless class_node
 
           const_node = class_node.children.first

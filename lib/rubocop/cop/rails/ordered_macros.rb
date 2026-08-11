@@ -37,6 +37,7 @@ module RuboCop
 
         def on_class(node)
           body = node.body
+
           return unless body
 
           statements = if body.begin_type?
@@ -68,6 +69,7 @@ module RuboCop
           calls.each_cons(2) do |previous, current|
             previous_name = macro_name(previous)
             current_name = macro_name(current)
+
             next if current_name >= previous_name
 
             add_offense(

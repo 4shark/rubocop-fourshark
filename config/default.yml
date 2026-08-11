@@ -3,6 +3,13 @@
 # so the names read like any other cop. Where a 4Shark cop supersedes or
 # contradicts a stock cop, the stock cop is disabled here (see the bottom block).
 
+# Mirrors the stock `Layout/EmptyLineAfterGuardClause` rather than replacing it:
+# that one sets the run off below, this one above, and both are wanted.
+Layout/EmptyLineBeforeGuardClause:
+  Description: 'Add a blank line before a guard clause that follows ordinary code.'
+  Enabled: true
+  VersionAdded: '0.9.0'
+
 Layout/MultilineStatementSpacing:
   Description: 'Add a blank line between consecutive statements when either spans multiple lines.'
   Enabled: true

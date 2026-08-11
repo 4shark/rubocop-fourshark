@@ -33,6 +33,7 @@ module RuboCop
           return unless let_block?(node)
 
           body = node.body
+
           return unless body
 
           body.each_node(:if, :case) do |conditional|
