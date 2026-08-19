@@ -11,7 +11,7 @@
 # The branch name is fixed, so a run whose diff differs from the open PR updates
 # that PR in place instead of stacking a new one every week.
 #
-# The age gate lives in the `bundle update` step, not here: BUNDLE_COOLDOWN makes
+# The age gate lives in the resolution step, not here: BUNDLE_COOLDOWN makes
 # Bundler refuse any version published within the cooldown window, across the
 # whole resolution — transitive dependencies included.
 #
@@ -58,6 +58,8 @@ gh pr create \
   --body "Re-resolved the dependencies pulled in transitively, which Renovate leaves untouched because no manifest declares them.
 
 Every dependency the repository does declare kept the version it was locked to — the job compares them before and after and fails if one moved, so a direct-dependency bump only ever arrives through a pull request of its own.
+
+A transitive dependency whose new version a declared one cannot accommodate is missing from this diff on purpose: it stays where it is until Renovate proposes the declared bump that frees it. The workflow log names each one it held back.
 
 No version in this diff was published within the minimum release age — Bundler's own cooldown enforces that during resolution.
 
