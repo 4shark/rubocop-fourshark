@@ -44,7 +44,11 @@
 # as a `gem` line in the Gemfile.
 #
 # The lockfiles are discovered rather than listed, so a bundle added later is
-# picked up without editing this script.
+# picked up without editing this script. The trees that hold somebody else's
+# bundle are left out of that discovery: a lockfile under `vendor` or
+# `node_modules` belongs to a dependency this repository merely carries, so
+# resolving it spends time on a diff nothing here owns and the pull request
+# step, which stages this repository's own lockfile, discards anyway.
 #
 # Required env: BUNDLE_COOLDOWN
 
@@ -105,13 +109,13 @@ lockfile_gems() {
         moved_spec.dependencies.each do |dependency|
           resolved_version = resolved_versions[dependency.name]
           next if resolved_version.nil?
-          constraining << dependency.name unless dependency.requirement.satisfied_by?(resolved_version)
+          constraining << dependency.name if !dependency.requirement.satisfied_by?(resolved_version)
         end
 
         resolved_parser.specs.each do |spec|
           spec.dependencies.each do |dependency|
-            next unless dependency.name == moved_spec.name
-            constraining << spec.name unless dependency.requirement.satisfied_by?(moved_spec.version)
+            next if dependency.name != moved_spec.name
+            constraining << spec.name if !dependency.requirement.satisfied_by?(moved_spec.version)
           end
         end
       end
@@ -121,7 +125,15 @@ lockfile_gems() {
   ' -- "$1" "$2" "${3:-}"
 }
 
+# Captured through an assignment rather than read from a process substitution,
+# whose failure the shell never collects: an unreadable directory makes `find`
+# print what it reached and exit non-zero, which would otherwise hand the loop a
+# short set and resolve it as though it were the whole repository.
+discovered_lockfiles=$(find . -name Gemfile.lock -not -path './vendor/*' -not -path './node_modules/*' -not -path './.git/*' | sort)
+
 while IFS= read -r lockfile; do
+  [[ -n "$lockfile" ]] || continue
+
   bundle_directory=$(dirname "$lockfile")
   echo "==> Updating the transitive dependencies in ${bundle_directory}"
 
@@ -166,12 +178,15 @@ while IFS= read -r lockfile; do
 
     constraining_gems=$(lockfile_gems constraining "$locked_lockfile" "$lockfile")
 
-    # `comm` gives a wrong answer rather than an error on unsorted input; both
-    # sides come out of `lockfile_gems` sorted and stay that way through here.
+    # `comm` gives a wrong answer rather than an error on unsorted input, and it
+    # judges order by the shell's collation while both sides come out of
+    # `lockfile_gems` sorted by Ruby's byte comparison. `LC_ALL=C` is what makes
+    # those two agree: any other collation treats a hyphen as non-significant,
+    # so it reads `rack-test` before `racktest` as disorder.
     remaining_gems=()
     while IFS= read -r gem_name; do
       remaining_gems+=("$gem_name")
-    done < <(comm -23 <(printf '%s\n' "${candidate_gems[@]}") <(printf '%s\n' "$constraining_gems"))
+    done < <(LC_ALL=C comm -23 <(printf '%s\n' "${candidate_gems[@]}") <(printf '%s\n' "$constraining_gems"))
 
     held_back=$((${#candidate_gems[@]} - ${#remaining_gems[@]}))
 
@@ -191,8 +206,11 @@ while IFS= read -r lockfile; do
       break
     fi
 
+    # The constraining set can name a declared gem, which was never a candidate
+    # and so is not among the ones held back. Intersecting it with the candidates
+    # is the complement of the subtraction above, so the list and the count agree.
     echo "    Holding back ${held_back} transitive gems a declared dependency constrains, and resolving again:"
-    printf '%s\n' "$constraining_gems" | sed 's/^/      /'
+    LC_ALL=C comm -12 <(printf '%s\n' "${candidate_gems[@]}") <(printf '%s\n' "$constraining_gems") | sed 's/^/      /'
 
     candidate_gems=("${remaining_gems[@]}")
     attempt=$((attempt + 1))
@@ -207,4 +225,4 @@ while IFS= read -r lockfile; do
   fi
 
   rm -f "$locked_lockfile"
-done < <(find . -name Gemfile.lock -not -path './vendor/*' -not -path './.git/*' | sort)
+done <<< "$discovered_lockfiles"

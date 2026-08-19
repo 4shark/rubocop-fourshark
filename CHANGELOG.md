@@ -9,6 +9,9 @@
 - Weekly transitive dependency updates
 - Transitive dependency pull request now covers every lockfile the update touched
 - Lockfile discovery no longer publishes a short set when the search itself fails
+- Transitive resolution no longer runs on a short lockfile set when the search itself fails
+- Lockfile discovery skips the bundles vendored under node_modules
+- Held-back gem list pinned to the collation that sorted it
 
 ## [0.8.6] - 2026-08-08
 
