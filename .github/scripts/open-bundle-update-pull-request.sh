@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish the result of the resolution step as a pull request.
+# Publish the result of a resolution run as a pull request.
 #
 # Renovate updates the dependencies declared in the Gemfile; the ones those
 # dependencies pull in transitively only move when a declared dependency drags
@@ -37,7 +37,7 @@ BOT_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
 # whose failure the shell never collects: an unreadable directory makes `find`
 # print what it reached and exit non-zero, which would otherwise hand the loop a
 # short set and publish it as complete. Here `set -e` and `pipefail` abort.
-discovered_lockfiles=$(find . -name Gemfile.lock -not -path './vendor/*' -not -path './.git/*' | sort)
+discovered_lockfiles=$(find . -name Gemfile.lock -not -path './vendor/*' -not -path './node_modules/*' -not -path './.git/*' | sort)
 
 lockfiles=()
 while IFS= read -r lockfile; do
