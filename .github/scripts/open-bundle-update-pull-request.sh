@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Publish the result of a `bundle update` run as a pull request.
+# Publish the result of the resolution step as a pull request.
 #
 # Renovate updates the dependencies declared in the Gemfile; the ones those
 # dependencies pull in transitively only move when a declared dependency drags
@@ -28,8 +28,22 @@ BOT_EMAIL="41898282+github-actions[bot]@users.noreply.github.com"
 : "${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is required}"
 : "${GITHUB_REF_NAME:?GITHUB_REF_NAME is required}"
 
-if git diff --quiet -- Gemfile.lock; then
-  echo "Gemfile.lock is unchanged; every transitive version is already current."
+# Discovered with the expression the resolution step uses, so the two steps can
+# never disagree about which files this job owns. A lockfile the resolution
+# rewrote but this step did not stage is discarded with the runner's working
+# tree, and nothing about the run says so.
+lockfiles=()
+while IFS= read -r lockfile; do
+  lockfiles+=("$lockfile")
+done < <(find . -name Gemfile.lock -not -path './vendor/*' -not -path './.git/*' | sort)
+
+if [[ ${#lockfiles[@]} -eq 0 ]]; then
+  echo "This repository has no lockfile to publish."
+  exit 0
+fi
+
+if git diff --quiet -- "${lockfiles[@]}"; then
+  echo "Every lockfile is unchanged; every transitive version is already current."
   exit 0
 fi
 
@@ -39,7 +53,7 @@ git config user.name "$BOT_NAME"
 git config user.email "$BOT_EMAIL"
 
 git checkout -b "$BRANCH_NAME"
-git add Gemfile.lock
+git add -- "${lockfiles[@]}"
 git commit -m "$COMMIT_SUBJECT"
 git push --force origin "${BRANCH_NAME}:refs/heads/${BRANCH_NAME}"
 
@@ -63,4 +77,4 @@ A transitive dependency whose new version a declared one cannot accommodate is m
 
 No version in this diff was published within the minimum release age — Bundler's own cooldown enforces that during resolution.
 
-The diff is limited to \`Gemfile.lock\`; nothing declared in the \`Gemfile\` changed."
+The diff is limited to the lockfiles; nothing declared in a manifest changed."

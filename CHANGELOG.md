@@ -7,6 +7,7 @@
 ### Fixed
 
 - Weekly transitive dependency updates
+- Transitive dependency pull request now covers every lockfile the update touched
 
 ## [0.8.6] - 2026-08-08
 
