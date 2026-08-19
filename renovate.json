@@ -1,0 +1,37 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "internalChecksFilter": "strict",
+  "rangeStrategy": "pin",
+  "packageRules": [
+    {
+      "description": "Pin and pinDigest updates bypass minimumReleaseAge",
+      "matchUpdateTypes": ["pin", "pinDigest"],
+      "minimumReleaseAge": null
+    },
+    {
+      "description": "GitHub Actions digest updates bypass minimumReleaseAge (Renovate cannot compute releaseTimestamp for moving tags)",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["digest"],
+      "minimumReleaseAge": null
+    },
+    {
+      "description": "GitHub Actions keep default rangeStrategy (managed by helpers:pinGitHubActionDigests). Workaround for renovatebot/renovate#41624.",
+      "matchManagers": ["github-actions"],
+      "rangeStrategy": "auto"
+    },
+    {
+      "description": "Bundler moves the lockfile and leaves the Gemfile and the gemspec alone. The Gemfile declares its gems without a version constraint, and every rangeStrategy except update-lockfile skips a dependency that has no constraint — which silences the manager entirely rather than for one gem. It also keeps the published gemspec constraints out of automated edits, since those are the contract consumers resolve against. See https://docs.renovatebot.com/ruby/",
+      "matchManagers": ["bundler"],
+      "rangeStrategy": "update-lockfile"
+    },
+    {
+      "description": "Suppress bulk 'Pin Dependencies' PRs created by rangeStrategy=pin. Pinning happens incrementally during version updates instead.",
+      "matchUpdateTypes": ["pin"],
+      "enabled": false
+    }
+  ]
+}
