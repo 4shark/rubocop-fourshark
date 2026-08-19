@@ -1,0 +1,55 @@
+name: Reverify Minimum Age
+
+# Re-evaluate the Verify Minimum Age commit status on every open PR daily,
+# so it self-heals from pending to success once the 7-day minimum release
+# age is reached — no manual rebase or retry required on each PR.
+
+on:
+  schedule:
+    - cron: '0 12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  statuses: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  reverify-open-prs:
+    name: Re-verify open PRs
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Re-evaluate Verify Minimum Age on every open PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTIFY_HANDLE: 4shark/app-back-end-development
+          MIN_AGE_DAYS: ${{ vars.DEPENDENCY_MINIMUM_RELEASE_AGE_DAYS }}
+        run: |
+          set -euo pipefail
+
+          PRS=$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --json number,headRefOid,headRefName --jq '.[] | "\(.number)\t\(.headRefOid)\t\(.headRefName)"')
+
+          if [[ -z "$PRS" ]]; then
+            echo "No open PRs to re-verify."
+            exit 0
+          fi
+
+          while IFS=$'\t' read -r PR_NUMBER COMMIT_SHA BRANCH; do
+            echo "::group::PR #${PR_NUMBER} (${BRANCH} @ ${COMMIT_SHA})"
+            if ! gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --paginate --jq '.[].filename' | grep -qE '^\.github/(workflows|actions)/'; then
+              echo "PR #${PR_NUMBER} touched no .github/workflows or .github/actions file; skipping."
+              echo "::endgroup::"
+              continue
+            fi
+            git fetch --depth=1 "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$COMMIT_SHA" 2>/dev/null || { echo "Skipping PR #${PR_NUMBER} — could not fetch ${COMMIT_SHA}"; echo "::endgroup::"; continue; }
+            git checkout "$COMMIT_SHA" -- .github 2>/dev/null || { echo "Skipping PR #${PR_NUMBER} — .github not reachable on this commit"; echo "::endgroup::"; continue; }
+            COMMIT_SHA="$COMMIT_SHA" PR_NUMBER="$PR_NUMBER" GH_TOKEN="$GH_TOKEN" NOTIFY_HANDLE="$NOTIFY_HANDLE" MIN_AGE_DAYS="$MIN_AGE_DAYS" .github/scripts/verify-minimum-age.sh || echo "::warning::verify script exited non-zero for PR #${PR_NUMBER}"
+            git checkout HEAD -- .github
+            echo "::endgroup::"
+          done <<< "$PRS"

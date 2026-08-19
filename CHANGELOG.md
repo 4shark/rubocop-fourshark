@@ -3,6 +3,8 @@
 ### Added
 
 - `Layout/EmptyLineBeforeGuardClause` — a guard clause that follows ordinary code must be preceded by a blank line
+- Automated dependency-update runs
+- Minimum-age verification on pull requests, re-evaluated daily
 
 ### Fixed
 

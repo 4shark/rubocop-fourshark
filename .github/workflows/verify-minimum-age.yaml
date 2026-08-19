@@ -1,0 +1,27 @@
+name: Verify Minimum Age
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  statuses: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  verify-minimum-age:
+    name: Verify Minimum Age
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Verify dependency pin ages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          NOTIFY_HANDLE: 4shark/app-back-end-development
+          MIN_AGE_DAYS: ${{ vars.DEPENDENCY_MINIMUM_RELEASE_AGE_DAYS }}
+        run: .github/scripts/verify-minimum-age.sh
