@@ -31,6 +31,11 @@
       "rangeStrategy": "update-lockfile"
     },
     {
+      "description": "Gems published on more than one platform reach Renovate without a releaseTimestamp: the rubygems datasource hashes the version list without deduplicating, so it disagrees with its own metadata fetch and falls back to a timestamp-less result. Under the default timestamp-required that marks them pending forever — no branch, no PR, whatever their real age. The 7-day cooldown they give up here is restored on the pull request by .github/scripts/verify-minimum-age.sh, the same split the github-actions digest rule above uses. See renovatebot/renovate#25127.",
+      "matchManagers": ["bundler"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
       "description": "Suppress bulk 'Pin Dependencies' PRs created by rangeStrategy=pin. Pinning happens incrementally during version updates instead.",
       "matchUpdateTypes": ["pin"],
       "enabled": false
