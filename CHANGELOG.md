@@ -14,6 +14,7 @@
 - Transitive resolution no longer runs on a short lockfile set when the search itself fails
 - Lockfile discovery skips the bundles vendored under node_modules
 - Held-back gem list pinned to the collation that sorted it
+- Daily dependency age re-check leaving pull requests without the status they need to merge
 
 ## [0.8.6] - 2026-08-08
 
