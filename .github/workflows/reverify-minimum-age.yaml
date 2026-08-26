@@ -25,6 +25,15 @@ jobs:
         with:
           persist-credentials: false
 
+      # An unset variable interpolates to the empty string, and the per-PR
+      # `|| echo` below swallows the script's own refusal — so every open PR
+      # would be warned over, none would get a commit status, and the job
+      # would still report success.
+      - name: Require the minimum release age to be configured
+        run: ': "${MIN_AGE_DAYS:?DEPENDENCY_MINIMUM_RELEASE_AGE_DAYS is required}"'
+        env:
+          MIN_AGE_DAYS: ${{ vars.DEPENDENCY_MINIMUM_RELEASE_AGE_DAYS }}
+
       - name: Re-evaluate Verify Minimum Age on every open PR
         env:
           GH_TOKEN: ${{ github.token }}

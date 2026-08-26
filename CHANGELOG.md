@@ -15,6 +15,7 @@
 - Lockfile discovery skips the bundles vendored under node_modules
 - Held-back gem list pinned to the collation that sorted it
 - Daily dependency age re-check leaving pull requests without the status they need to merge
+- Dependency age checks running with no configured minimum
 
 ## [0.8.6] - 2026-08-08
 
