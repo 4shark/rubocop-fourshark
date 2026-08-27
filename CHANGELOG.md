@@ -16,6 +16,8 @@
 - Held-back gem list pinned to the collation that sorted it
 - Daily dependency age re-check leaving pull requests without the status they need to merge
 - Dependency age checks running with no configured minimum
+- Minimum release age applied to the weekly transitive dependency update
+- Ruby setup action pinned like every other action in the workflows
 
 ## [0.8.6] - 2026-08-08
 
