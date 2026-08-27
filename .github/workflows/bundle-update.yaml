@@ -25,10 +25,17 @@ jobs:
         env:
           MINIMUM_RELEASE_AGE_DAYS: ${{ vars.DEPENDENCY_MINIMUM_RELEASE_AGE_DAYS }}
 
-      - uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
         with:
           ruby-version: .ruby-version
+          bundler: '4.0.19'
           bundler-cache: true
+
+      # BUNDLE_COOLDOWN reaches `bundle lock` only from Bundler 4.0.18; below
+      # that it is unrecognised config a lower Bundler ignores in silence, so
+      # the job resolves with no minimum release age and nothing says so.
+      - name: Require a Bundler that applies the cooldown to bundle lock
+        run: ruby -rbundler -e 'abort "Bundler >= 4.0.18 is required for BUNDLE_COOLDOWN to reach bundle lock; got #{Bundler::VERSION}" if Gem::Version.new(Bundler::VERSION) < Gem::Version.new("4.0.18")'
 
       - name: Update the dependencies nothing in the repository declares
         run: bash .github/scripts/update-transitive-dependencies.sh
