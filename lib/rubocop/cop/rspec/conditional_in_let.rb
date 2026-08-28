@@ -26,7 +26,6 @@ module RuboCop
       #
       class ConditionalInLet < ::RuboCop::Cop::Base
         MSG = 'Do not put conditional logic in a `let` — use separate contexts.'
-
         LET_METHODS = %i[let let!].freeze
 
         def on_block(node)

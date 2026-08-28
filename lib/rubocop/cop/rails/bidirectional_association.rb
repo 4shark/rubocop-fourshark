@@ -82,7 +82,6 @@ module RuboCop
             assoc_name = literal_value(node.first_argument)
             inverse_name = extract_inverse_of(node)
             target_class = extract_class_name(node, assoc_name)
-
             [model_name, assoc_name, inverse_name, target_class]
           end
         end

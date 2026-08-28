@@ -7,12 +7,10 @@ Gem::Specification.new do |spec|
   spec.version = RuboCop::Fourshark::VERSION
   spec.authors = ['Paulo Ribeiro']
   spec.email = ['plribeiro3000@gmail.com']
-
   spec.summary = "RuboCop extension enforcing 4Shark's Ruby, Rails, and RSpec conventions."
   spec.homepage = 'https://github.com/4shark/rubocop-fourshark'
   spec.license = 'MIT'
   spec.required_ruby_version = '>= 3.1.0'
-
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = 'https://github.com/4shark/rubocop-fourshark/blob/main'
   spec.metadata['changelog_uri'] = 'https://github.com/4shark/rubocop-fourshark/blob/main/CHANGELOG.md'
@@ -32,9 +30,7 @@ Gem::Specification.new do |spec|
   spec.bindir = 'exe'
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
-
   spec.metadata['default_lint_roller_plugin'] = 'RuboCop::Fourshark::Plugin'
-
   spec.add_dependency 'lint_roller', '~> 1.1'
   spec.add_dependency 'rubocop', '>= 1.87'
 
