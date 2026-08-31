@@ -3,6 +3,7 @@
 require_relative 'factory_bot/association_in_factory'
 require_relative 'layout/empty_line_before_guard_clause'
 require_relative 'layout/multiline_statement_spacing'
+require_relative 'layout/single_line_statement_spacing'
 require_relative 'rails/bidirectional_association'
 require_relative 'rails/mandatory_inverse_of'
 require_relative 'rails/optional_belongs_to'

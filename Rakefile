@@ -9,9 +9,7 @@ RSpec::Core::RakeTask.new(:spec) do |spec|
 end
 
 RuboCop::RakeTask.new
-
 task default: %i[spec rubocop]
-
 desc 'Generate a new cop with a template'
 
 task :new_cop, [:cop] do |_task, args|
@@ -23,11 +21,9 @@ task :new_cop, [:cop] do |_task, args|
   end
 
   generator = RuboCop::Cop::Generator.new(cop_name)
-
   generator.write_source
   generator.write_spec
   generator.inject_require(root_file_path: 'lib/rubocop/cop/fourshark_cops.rb')
   generator.inject_config(config_file_path: 'config/default.yml')
-
   puts generator.todo
 end

@@ -87,6 +87,7 @@ Where a 4Shark cop supersedes or contradicts a stock cop, `config/default.yml` t
 |---|---|
 | `Layout/EmptyLineBeforeGuardClause` | Requires a blank line before a guard clause that follows ordinary code, so a clause that breaks the flow is findable at a glance instead of read for. Consecutive guard clauses are one block and stay glued together — only the first of a run needs the blank line, and a clause that opens a body needs none. Mirrors the stock `Layout/EmptyLineAfterGuardClause`, which sets the run off below; enable both. |
 | `Layout/MultilineStatementSpacing` | Requires a blank line between two consecutive statements when either spans multiple lines, so multi-line statements read as distinct units. |
+| `Layout/SingleLineStatementSpacing` | Forbids a blank line between two consecutive single-line statements — they are one run, so the blank reveals nothing. The complement of `Layout/MultilineStatementSpacing`; the two never fire on the same pair. Autocorrects by removing the blank. |
 
 ### Naming
 

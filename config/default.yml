@@ -15,6 +15,13 @@ Layout/MultilineStatementSpacing:
   Enabled: true
   VersionAdded: '0.2.0'
 
+# The complement of Layout/MultilineStatementSpacing: no blank line between two
+# single-line statements. Autocorrects (removing a blank has no placement ambiguity).
+Layout/SingleLineStatementSpacing:
+  Description: 'Do not put a blank line between two consecutive single-line statements.'
+  Enabled: true
+  VersionAdded: '0.9.0'
+
 # Stock cop configured (not a 4Shark cop): enforce the `indented` style for
 # multiline method-call chains — continuation calls are indented one step from
 # the receiver instead of aligning with the first call.

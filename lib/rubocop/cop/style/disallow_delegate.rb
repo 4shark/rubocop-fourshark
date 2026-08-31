@@ -122,7 +122,6 @@ module RuboCop
       class DisallowDelegate < ::RuboCop::Cop::Base
         MACRO_MSG = 'Do not use automatic delegation. Delete the forwarder and let the caller navigate.'
         FORWARDER_MSG = 'Do not forward a collaborator\'s message. Delete the forwarder and let the caller navigate.'
-
         RESTRICT_ON_SEND = %i[delegate delegate_missing_to def_delegator def_delegators DelegateClass].freeze
 
         # An argument reaches the body wrapped in one of these when the call site

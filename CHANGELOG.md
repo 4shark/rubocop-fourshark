@@ -5,6 +5,7 @@
 - `Layout/EmptyLineBeforeGuardClause` — a guard clause that follows ordinary code must be preceded by a blank line
 - Automated dependency-update runs
 - Minimum-age verification on pull requests, re-evaluated daily
+- `Layout/SingleLineStatementSpacing` — a blank line between two consecutive single-line statements is removed
 
 ### Fixed
 

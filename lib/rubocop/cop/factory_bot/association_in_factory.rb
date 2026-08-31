@@ -24,7 +24,6 @@ module RuboCop
       #
       class AssociationInFactory < ::RuboCop::Cop::Base
         MSG = 'Do not declare associations in factories — set them manually in the spec.'
-
         CONTAINER_METHODS = %i[factory trait].freeze
         # FactoryBot DSL methods that are bare calls but are NOT associations.
         DSL_KEYWORDS = %i[skip_create initialize_with].freeze
