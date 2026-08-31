@@ -8,6 +8,10 @@
 - `Layout/SingleLineStatementSpacing` — a blank line between two consecutive single-line statements is removed
 - `Style/OrderedConstants` — a run of consecutive constant assignments must be sorted alphabetically
 
+### Changed
+
+- Development Ruby version to 4.0.6
+
 ### Fixed
 
 - Weekly transitive dependency updates
