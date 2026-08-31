@@ -56,6 +56,11 @@ Style/DisallowTry:
   Enabled: true
   VersionAdded: '0.1.0'
 
+Style/OrderedConstants:
+  Description: 'Sort a run of consecutive constant assignments alphabetically by name.'
+  Enabled: true
+  VersionAdded: '0.9.0'
+
 Rails/MandatoryInverseOf:
   Description: 'Every association must declare `inverse_of` (stricter than stock `Rails/InverseOf`).'
   Enabled: true

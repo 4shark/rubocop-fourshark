@@ -80,6 +80,7 @@ Where a 4Shark cop supersedes or contradicts a stock cop, `config/default.yml` t
 | `Style/DisallowSafeNavigation` | Flags safe navigation (`&.`). 4Shark rejects it — a `&.` chain silently swallows a `nil` that usually signals a real bug. Use an explicit conditional so the `nil` case is handled on purpose. |
 | `Style/DisallowTernary` | Flags the ternary conditional (`cond ? a : b`). `?` and `:` are punctuation that already mean other things in Ruby (`valid?`, `:symbol`), and the ternary hides a branch inside an expression where skimming misses it. Use an explicit `if`/`else`. |
 | `Style/DisallowTry` | Flags `try` / `try!`. Same rationale — it hides the `nil`/missing-method case instead of handling it explicitly. |
+| `Style/OrderedConstants` | A run of consecutive constant assignments must be sorted alphabetically by name. A lone constant is never flagged, and any non-constant statement breaks the run. Flags without autocorrecting — a constant can reference one declared above it, so a human decides the order. Experimental. |
 
 ### Layout
 

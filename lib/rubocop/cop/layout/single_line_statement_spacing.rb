@@ -12,10 +12,10 @@ module RuboCop
       # beside a multi-line or heredoc neighbour. Autocorrects by removing it.
       class SingleLineStatementSpacing < ::RuboCop::Cop::Base
         extend ::RuboCop::Cop::AutoCorrector
-        MSG = 'Remove the blank line between consecutive single-line statements.'
-        FLOW_CONTROL_TYPES = %i[return next break redo retry].freeze
-        FLOW_CONTROL_METHODS = %i[raise fail throw].freeze
         ACCESS_MODIFIERS = %i[private protected public module_function].freeze
+        FLOW_CONTROL_METHODS = %i[raise fail throw].freeze
+        FLOW_CONTROL_TYPES = %i[return next break redo retry].freeze
+        MSG = 'Remove the blank line between consecutive single-line statements.'
 
         def on_begin(node)
           node.children.each_cons(2) do |first, second|

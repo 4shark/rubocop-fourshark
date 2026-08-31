@@ -32,9 +32,9 @@ module RuboCop
       #   end
       #
       class OverwrittenLet < ::RuboCop::Cop::Base
-        MSG = 'Do not override the outer `let` `%<name>s`; use a distinct name or set the value in `before`.'
-        LET_METHODS = %i[let let!].freeze
         EXAMPLE_GROUP_METHODS = %i[describe context].freeze
+        LET_METHODS = %i[let let!].freeze
+        MSG = 'Do not override the outer `let` `%<name>s`; use a distinct name or set the value in `before`.'
 
         def on_send(node)
           return unless LET_METHODS.include?(node.method_name) && node.receiver.nil?

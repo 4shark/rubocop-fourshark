@@ -27,8 +27,8 @@ module RuboCop
       #   validates :name
       #
       class OrderedMacros < ::RuboCop::Cop::Base
-        MSG = 'Sort `%<macro>s` declarations alphabetically (`%<name>s` should come before `%<previous>s`).'
         MACROS = %i[belongs_to has_one has_many has_and_belongs_to_many validates scope].freeze
+        MSG = 'Sort `%<macro>s` declarations alphabetically (`%<name>s` should come before `%<previous>s`).'
 
         def self.default_configuration
           super.merge('Include' => ['app/models/**/*.rb'])
