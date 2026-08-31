@@ -20,8 +20,8 @@ module RuboCop
       # model class (a linter runs without the Rails app booted).
       #
       class InverseOfMatcher < ::RuboCop::Cop::Base
-        MSG_MISSING_INVERSE   = 'Root models must include `.inverse_of` in association specs.'
         MSG_FORBIDDEN_INVERSE = 'Subclasses must NOT include `.inverse_of` in specs (it belongs to the parent).'
+        MSG_MISSING_INVERSE   = 'Root models must include `.inverse_of` in association specs.'
 
         def self.default_configuration
           super.merge(
