@@ -24,6 +24,7 @@
 - Dependency age checks running with no configured minimum
 - Minimum release age applied to the weekly transitive dependency update
 - Ruby setup action pinned like every other action in the workflows
+- Minimum-age check no longer errors on the gem's own unreleased version
 
 ## [0.8.6] - 2026-08-08
 

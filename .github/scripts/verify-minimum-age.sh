@@ -111,8 +111,21 @@ GEMS=$(echo "$LOCKFILE_PATCH" \
        | sed -E 's/^\+    ([a-zA-Z0-9._-]+) \(([^)]+)\)$/\1@\2/' \
        | sort -u || true)
 
+# The gem developed in this repository is a PATH source in its own Gemfile.lock.
+# A release commit bumps its version ahead of what RubyGems has published, so
+# aging that version against a release date always errors. Exclude every
+# path-source gem name from the RubyGems check.
+PATH_GEMS=$(awk '
+  /^PATH$/ { in_path = 1; next }
+  /^[A-Za-z]/ { in_path = 0 }
+  in_path && /^    [a-zA-Z0-9._-]+ \(/ { sub(/^    /, ""); sub(/ .*/, ""); print }
+' Gemfile.lock 2>/dev/null || true)
+
 while IFS='@' read -r GEM VERSION; do
   [[ -z "$GEM" || -z "$VERSION" ]] && continue
+  if printf '%s\n' "$PATH_GEMS" | grep -Fxq -- "$GEM"; then
+    continue
+  fi
   TOTAL=$((TOTAL + 1))
 
   # A hyphen in a lockfile version is always a platform suffix — RubyGems
