@@ -30,3 +30,25 @@ jobs:
           bundler-cache: true
       - name: Run the default task
         run: bundle exec rake
+
+  licenses:
+    runs-on: ubuntu-latest
+    name: Licenses (License Compliance)
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@95ef2b042f9d7a56d8268cba8559e2842e2ad01b # v1.321.0
+        with:
+          ruby-version: '4.0.6'
+          bundler-cache: true
+      - name: Install Syft and Grant
+        run: |
+          curl -sSfL https://get.anchore.io/syft | sh -s -- -b "$RUNNER_TEMP/bin" v1.51.1
+          curl -sSfL https://get.anchore.io/grant | sh -s -- -b "$RUNNER_TEMP/bin" v0.6.8
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - name: Generate dependency SBOM
+        run: syft scan dir:. --override-default-catalogers ruby-installed-gemspec-cataloger -o syft-json --file sbom.json
+      - name: Check dependency licenses
+        run: grant check -c .grant.yaml --disable-file-search sbom.json
