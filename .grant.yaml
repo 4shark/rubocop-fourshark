@@ -1,0 +1,28 @@
+# License allow-list enforced by `grant` over the Syft SBOM (see .github/workflows/main.yml).
+# Mirrors the licenses the 4Shark Ruby projects permit. require-license/require-known-license
+# are false so a dependency with no declared license or a non-SPDX license string still passes.
+allow:
+  - MIT
+  - Apache-2.0
+  - "BSD-2-Clause"
+  - "BSD-3-Clause"
+  - "BSD"
+  - "BSD 2-Clause"
+  - ISC
+  - Ruby
+  - ruby
+  - "same as ruby's"
+  - Zlib
+  - "LGPL-2.1*"
+  - "LGPL-3.0*"
+  - MPL-2.0
+  - "Artistic-*"
+  - "Brakeman Public Use License"
+  - "GPL-2.0*"
+  - "GPL-3.0*"
+  - GPLv2
+  - WTFPL
+  - "Prosperity*"
+
+require-license: false
+require-known-license: false
