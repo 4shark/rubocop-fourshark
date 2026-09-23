@@ -44,9 +44,13 @@ jobs:
           ruby-version: '4.0.6'
           bundler-cache: true
       - name: Install Syft and Grant
+        shell: bash
         run: |
           curl -sSfL https://get.anchore.io/syft | sh -s -- -b "$RUNNER_TEMP/bin" v1.51.1
           curl -sSfL https://get.anchore.io/grant | sh -s -- -b "$RUNNER_TEMP/bin" v0.6.8
+          # The Anchore installer exits 0 even when the download fails, so run each binary to prove it was installed.
+          "$RUNNER_TEMP/bin/syft" version
+          "$RUNNER_TEMP/bin/grant" version
           echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
       - name: Generate dependency SBOM
         run: syft scan dir:. --override-default-catalogers ruby-installed-gemspec-cataloger -o syft-json --file sbom.json

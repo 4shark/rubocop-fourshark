@@ -8,6 +8,7 @@
 
 - Gem update pull requests limited to the named gem
 - Minimum release age verification across lockfiles and manifests
+- License check fails at a failed tool install
 
 ## [0.9.0] - 2026-08-31
 
