@@ -36,6 +36,11 @@
       "minimumReleaseAgeBehaviour": "timestamp-optional"
     },
     {
+      "description": "A gem update PR moves only the gem it names. Without --conservative, `bundler lock --update <gem>` also unlocks that gem's whole dependency tree and resolves every transitive to its newest release — a release minimumReleaseAge never checked, since it only sees the declared gem. Transitive dependencies are updated separately.",
+      "matchManagers": ["bundler"],
+      "postUpdateOptions": ["bundlerConservative"]
+    },
+    {
       "description": "Suppress bulk 'Pin Dependencies' PRs created by rangeStrategy=pin. Pinning happens incrementally during version updates instead.",
       "matchUpdateTypes": ["pin"],
       "enabled": false

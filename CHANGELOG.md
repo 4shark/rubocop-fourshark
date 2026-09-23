@@ -4,6 +4,10 @@
 
 - License compliance verification
 
+### Changed
+
+- Gem update pull requests limited to the named gem
+
 ## [0.9.0] - 2026-08-31
 
 ### Added
