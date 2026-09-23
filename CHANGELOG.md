@@ -7,6 +7,7 @@
 ### Changed
 
 - Gem update pull requests limited to the named gem
+- Minimum release age verification across lockfiles and manifests
 
 ## [0.9.0] - 2026-08-31
 
