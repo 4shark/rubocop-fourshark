@@ -203,7 +203,9 @@ while IFS=$'\t' read -r ECOSYSTEM PACKAGE VERSION; do
 
   case "$ECOSYSTEM" in
     action)
-      RELEASE_DATE=$(gh api "repos/${PACKAGE}/commits/${VERSION}" --jq '.commit.committer.date' 2>/dev/null || true)
+      # An action in a subdirectory (actions/cache/restore) is a commit of its owner/repo.
+      ACTION_REPOSITORY=$(echo "$PACKAGE" | cut -d/ -f1-2)
+      RELEASE_DATE=$(gh api "repos/${ACTION_REPOSITORY}/commits/${VERSION}" --jq '.commit.committer.date' 2>/dev/null || true)
       ;;
     rubygems)
       # A hyphen in a lockfile version is always a platform suffix — RubyGems
