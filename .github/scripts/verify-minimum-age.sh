@@ -92,7 +92,7 @@ list_versions() {
 # --paginate prints the pages it fetched before failing on a later one, so only the
 # exit status tells a truncated list from a complete one.
 if ! PR_FILES=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --paginate \
-                  --jq '.[] | "\(.status)\t\(.filename)\t\(.previous_filename // .filename)"' 2>/dev/null); then
+                  --jq '.[] | "\(.status)\t\(.filename)\t\(.previous_filename // .filename)\t\(.patch // "" | test("(?m)^\\+.*uses:\\s+[^.\\/][^@\\s]+@[0-9a-f]{40}"))"' 2>/dev/null); then
   PR_FILES=""
 fi
 
@@ -127,6 +127,7 @@ WORKFLOWS_DIR=".github/workflows"
 ACTIONS_DIR=".github/actions"
 
 TOTAL=0
+NEW_VERSIONS=0
 VIOLATIONS=0
 ERRORS=0
 MIN_AGE_FOUND=999999
@@ -158,10 +159,16 @@ HEAD_CONTENT_FILE=$(mktemp)
 BASE_CONTENT_FILE=$(mktemp)
 trap 'rm -f "$HEAD_CONTENT_FILE" "$BASE_CONTENT_FILE"' EXIT
 
-while IFS=$'\t' read -r FILE_STATUS FILE_PATH PREVIOUS_PATH; do
+while IFS=$'\t' read -r FILE_STATUS FILE_PATH PREVIOUS_PATH ADDS_ACTION_PIN; do
   [[ -z "$FILE_PATH" || "$FILE_STATUS" == "removed" ]] && continue
 
   case "$FILE_PATH" in
+    .github/workflows/* | .github/actions/*)
+      if [[ "$ADDS_ACTION_PIN" == "true" ]]; then
+        NEW_VERSIONS=$((NEW_VERSIONS + 1))
+      fi
+      continue
+      ;;
     Gemfile.lock | */Gemfile.lock) ECOSYSTEM="rubygems" ;;
     yarn.lock | */yarn.lock) ECOSYSTEM="npm" ;;
     pubspec.lock | */pubspec.lock) ECOSYSTEM="pub" ;;
@@ -192,6 +199,7 @@ while IFS=$'\t' read -r FILE_STATUS FILE_PATH PREVIOUS_PATH; do
 
   while IFS=$'\t' read -r PACKAGE VERSION; do
     [[ -z "$PACKAGE" || -z "$VERSION" ]] && continue
+    NEW_VERSIONS=$((NEW_VERSIONS + 1))
     DEPENDENCIES+="${ECOSYSTEM}"$'\t'"${PACKAGE}"$'\t'"${VERSION}"$'\n'
   done <<< "$ADDED_VERSIONS"
 done <<< "$PR_FILES"
@@ -295,17 +303,18 @@ else
   HAS_LABEL="no"
 fi
 
-if [[ "$STATE" == "success" && "$HAS_LABEL" == "no" ]]; then
+# A PR that adds no dependency version has nothing the team is waiting on, so it gets no label and no comment.
+if [[ "$STATE" == "success" && "$HAS_LABEL" == "no" && "$NEW_VERSIONS" -gt 0 ]]; then
   if ! gh api "repos/${GITHUB_REPOSITORY}/labels/${READY_LABEL}" >/dev/null 2>&1; then
     gh api -X POST "repos/${GITHUB_REPOSITORY}/labels" \
       -f name="$READY_LABEL" \
       -f color="0e8a16" \
-      -f description="Renovate cooldown complete — safe to merge" >/dev/null
+      -f description="Every new dependency version is past the minimum release age — safe to merge" >/dev/null
   fi
   gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels" \
     -f "labels[]=${READY_LABEL}" >/dev/null
   gh api -X POST "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/comments" \
-    -f body="@${NOTIFY_HANDLE} cooldown of ${MIN_AGE_DAYS}+ days complete — this PR is now mergeable." >/dev/null
+    -f body="@${NOTIFY_HANDLE} every new dependency version in this PR was published at least ${MIN_AGE_DAYS} days ago — this PR is mergeable." >/dev/null
   echo "Added label '${READY_LABEL}' and notified @${NOTIFY_HANDLE} on PR #${PR_NUMBER}."
 elif [[ "$STATE" != "success" && "$HAS_LABEL" == "yes" ]]; then
   gh api -X DELETE "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels/${READY_LABEL}" >/dev/null
