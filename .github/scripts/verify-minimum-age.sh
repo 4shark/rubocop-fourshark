@@ -144,8 +144,9 @@ if [[ -d "$WORKFLOWS_DIR" || -d "$ACTIONS_DIR" ]]; then
   done <<< "$PINS"
 fi
 
-BASE_REF=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.base.ref' 2>/dev/null || true)
-MERGE_BASE_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${BASE_REF}...${COMMIT_SHA}" --jq '.merge_base_commit.sha // empty' 2>/dev/null || true)
+# gh api writes the error body to stdout, so a failed call has to leave the value empty rather than keep that body.
+BASE_REF=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.base.ref' 2>/dev/null) || BASE_REF=""
+MERGE_BASE_SHA=$(gh api "repos/${GITHUB_REPOSITORY}/compare/${BASE_REF}...${COMMIT_SHA}" --jq '.merge_base_commit.sha // empty' 2>/dev/null) || MERGE_BASE_SHA=""
 
 # An empty ref makes the contents API answer from the default branch instead of failing.
 if [[ -z "$MERGE_BASE_SHA" ]]; then
@@ -205,7 +206,7 @@ while IFS=$'\t' read -r ECOSYSTEM PACKAGE VERSION; do
     action)
       # An action in a subdirectory (actions/cache/restore) is a commit of its owner/repo.
       ACTION_REPOSITORY=$(echo "$PACKAGE" | cut -d/ -f1-2)
-      RELEASE_DATE=$(gh api "repos/${ACTION_REPOSITORY}/commits/${VERSION}" --jq '.commit.committer.date' 2>/dev/null || true)
+      RELEASE_DATE=$(gh api "repos/${ACTION_REPOSITORY}/commits/${VERSION}" --jq '.commit.committer.date' 2>/dev/null) || RELEASE_DATE=""
       ;;
     rubygems)
       # A hyphen in a lockfile version is always a platform suffix — RubyGems
@@ -283,7 +284,16 @@ gh api -X POST "repos/${GITHUB_REPOSITORY}/statuses/${COMMIT_SHA}" \
   -f description="${DESCRIPTION:0:140}" >/dev/null
 echo "Posted commit status: state=${STATE} description=${DESCRIPTION}"
 
-HAS_LABEL=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels" --jq ".[].name" | grep -Fxq "$READY_LABEL" && echo "yes" || echo "no")
+if ! PR_LABELS=$(gh api "repos/${GITHUB_REPOSITORY}/issues/${PR_NUMBER}/labels" --jq ".[].name" 2>/dev/null); then
+  echo "::warning::could not read the labels of PR #${PR_NUMBER}; left '${READY_LABEL}' untouched"
+  exit 0
+fi
+
+if grep -Fxq "$READY_LABEL" <<< "$PR_LABELS"; then
+  HAS_LABEL="yes"
+else
+  HAS_LABEL="no"
+fi
 
 if [[ "$STATE" == "success" && "$HAS_LABEL" == "no" ]]; then
   if ! gh api "repos/${GITHUB_REPOSITORY}/labels/${READY_LABEL}" >/dev/null 2>&1; then
