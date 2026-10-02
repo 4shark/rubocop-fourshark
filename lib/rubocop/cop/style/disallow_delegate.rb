@@ -44,10 +44,10 @@ module RuboCop
       # contributes something the caller would otherwise have to reach in and
       # take, and the result is a simpler API on the object that owns the data.
       #
-      # Own state is an instance variable, `self`, or a receiverless call,
-      # reached directly, through a wrapper, or through a call on it — `record`,
-      # `record.owner_id` and `[record.owner_id]` all carry the object's own
-      # data. A method PARAMETER does not: it arrives as an `lvar`, so a setter
+      # Own state is an instance variable, `self`, a receiverless call, or a
+      # constant, reached directly, through a wrapper, or through a call on it —
+      # `record.owner_id` and `Settings.keep_alive` both carry data the object
+      # chose to supply. A method PARAMETER does not: it arrives as an `lvar`, so a setter
       # handing its argument to a collaborator stays flagged.
       #
       # Two limits keep the exemption from swallowing the rule.
@@ -236,6 +236,7 @@ module RuboCop
           return false if argument == collaborator
           return true if argument.ivar_type?
           return true if argument.self_type?
+          return true if argument.const_type?
           return own_state?(argument.receiver, collaborator) if call_with_receiver?(argument)
           return true if argument.send_type?
           return argument.children.any? { |child| own_state?(child, collaborator) } if wrapper?(argument)
