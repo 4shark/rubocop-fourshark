@@ -297,11 +297,36 @@ RSpec.describe RuboCop::Cop::Style::DisallowDelegate, :config do
     RUBY
   end
 
-  it 'registers an offense for a method composing a constant into the call' do
+  it 'does not register an offense for a method composing a constant into the call' do
+    expect_no_offenses(<<~RUBY)
+      def lock_key
+        Registry.lock_key(owner_id: Defaults.owner_id)
+      end
+    RUBY
+  end
+
+  it 'does not register an offense for a method composing a constant beside its own parameter' do
+    expect_no_offenses(<<~RUBY)
+      def scroll(scroll_id)
+        client.scroll(scroll_id: scroll_id, scroll: Settings.keep_alive)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for a constant collaborator passed back as the argument' do
     expect_offense(<<~RUBY)
       def lock_key
           ^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
-        Registry.lock_key(owner_id: Defaults.owner_id)
+        Registry.lock_key(Registry)
+      end
+    RUBY
+  end
+
+  it 'registers an offense for an argument rooted at a constant collaborator' do
+    expect_offense(<<~RUBY)
+      def lock_key
+          ^^^^^^^^ Do not forward a collaborator's message. Delete the forwarder and let the caller navigate.
+        Registry.lock_key(owner_id: Registry.default_owner_id)
       end
     RUBY
   end
