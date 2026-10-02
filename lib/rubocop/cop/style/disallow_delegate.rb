@@ -224,8 +224,8 @@ module RuboCop
         end
 
         # A method parameter reaches the body as an `lvar`, so only an instance
-        # variable, `self`, or a receiverless call counts as the object's own
-        # state — read directly, through a wrapper, or through a call on it.
+        # variable, `self`, a receiverless call, or a constant counts as the
+        # object's own state — read directly, through a wrapper, or through a call on it.
         # Anything rooted at the collaborator is that collaborator's own data
         # coming back, which is the echo the rule forbids. The first guard
         # refuses anything that is not a node, which covers both the nil child
