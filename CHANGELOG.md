@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+
+- `Style/OrderedConstants` — a constant that references one declared above it is no longer flagged
+
 ## [0.11.2] - 2026-10-07
 
 ### Added

@@ -65,6 +65,45 @@ RSpec.describe RuboCop::Cop::Style::OrderedConstants, :config do
     RUBY
   end
 
+  it 'does not register a constant that references one declared above it' do
+    expect_no_offenses(<<~RUBY)
+      module Schema
+        USER_DOWNSTREAM = { table: 'users' }.freeze
+        NORMALIZED_SCHEMA = [USER_DOWNSTREAM].freeze
+      end
+    RUBY
+  end
+
+  it 'does not register a constant that references one declared earlier in the run' do
+    expect_no_offenses(<<~RUBY)
+      module Schema
+        PARENT_DOWNSTREAM = { table: 'users' }.freeze
+        USER_DOWNSTREAM = { table: 'users' }.freeze
+        NORMALIZED_SCHEMA = [PARENT_DOWNSTREAM].freeze
+      end
+    RUBY
+  end
+
+  it 'still registers a constant that references only constants outside the run' do
+    expect_offense(<<~RUBY)
+      class Cop
+        MANGO = Fruit::MANGO
+        APPLE = Fruit::APPLE
+        ^^^^^ Sort constant assignments alphabetically (`APPLE` should come before `MANGO`).
+      end
+    RUBY
+  end
+
+  it 'still registers when a namespaced reference only shares a name with an earlier constant' do
+    expect_offense(<<~RUBY)
+      class Cop
+        MANGO = 1
+        APPLE = [Other::MANGO].freeze
+        ^^^^^ Sort constant assignments alphabetically (`APPLE` should come before `MANGO`).
+      end
+    RUBY
+  end
+
   it 'treats constants separated only by a comment as one run' do
     expect_offense(<<~RUBY)
       class Cop
