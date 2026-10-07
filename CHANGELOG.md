@@ -4,6 +4,9 @@
 
 - `Layout/SingleLineStatementSpacing` — the blank line after a `let`, `subject`, hook or example run is no longer removed
 - `Layout/SingleLineStatementSpacing` — the blank line between two gem sections is no longer removed
+- `Layout/SingleLineStatementSpacing` — the blank line after a hook or example written with a numbered or `it` block parameter is no longer removed
+- `Layout/SingleLineStatementSpacing` — the blank line between two subjects or after a one-line example group is no longer removed
+- `Layout/SingleLineStatementSpacing` — consecutive one-line hooks and examples are joined only while their RSpec cop allows it
 
 ## [0.11.0] - 2026-10-07
 
