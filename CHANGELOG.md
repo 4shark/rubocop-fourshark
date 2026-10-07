@@ -1,3 +1,10 @@
+## [Unreleased]
+
+### Fixed
+
+- `Layout/SingleLineStatementSpacing` — the blank line after a `let`, `subject`, hook or example run is no longer removed
+- `Layout/SingleLineStatementSpacing` — the blank line between two gem sections is no longer removed
+
 ## [0.11.0] - 2026-10-07
 
 ### Changed
