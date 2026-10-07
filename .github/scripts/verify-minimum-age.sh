@@ -214,9 +214,9 @@ while IFS=$'\t' read -r ECOSYSTEM PACKAGE VERSION; do
     action)
       # An action in a subdirectory (actions/cache/restore) is a commit of its owner/repo.
       ACTION_REPOSITORY=$(echo "$PACKAGE" | cut -d/ -f1-2)
-      # gh api has no retry option, so a transient GitHub failure is retried here.
+      # gh api has no retry or timeout option, so both are applied here.
       for ATTEMPT in 1 2 3; do
-        RELEASE_DATE=$(gh api "repos/${ACTION_REPOSITORY}/commits/${VERSION}" --jq '.commit.committer.date' 2>/dev/null) || RELEASE_DATE=""
+        RELEASE_DATE=$(timeout 30 gh api "repos/${ACTION_REPOSITORY}/commits/${VERSION}" --jq '.commit.committer.date' 2>/dev/null) || RELEASE_DATE=""
         [[ -n "$RELEASE_DATE" || "$ATTEMPT" -eq 3 ]] && break
         sleep $((ATTEMPT * 2))
       done
