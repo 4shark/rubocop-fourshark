@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Fixed
+
+- Dependency age check failing on a transient registry error
+
 ## [0.10.0] - 2026-10-02
 
 ### Added
