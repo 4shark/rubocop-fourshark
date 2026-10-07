@@ -214,31 +214,36 @@ while IFS=$'\t' read -r ECOSYSTEM PACKAGE VERSION; do
     action)
       # An action in a subdirectory (actions/cache/restore) is a commit of its owner/repo.
       ACTION_REPOSITORY=$(echo "$PACKAGE" | cut -d/ -f1-2)
-      RELEASE_DATE=$(gh api "repos/${ACTION_REPOSITORY}/commits/${VERSION}" --jq '.commit.committer.date' 2>/dev/null) || RELEASE_DATE=""
+      # gh api has no retry option, so a transient GitHub failure is retried here.
+      for ATTEMPT in 1 2 3; do
+        RELEASE_DATE=$(gh api "repos/${ACTION_REPOSITORY}/commits/${VERSION}" --jq '.commit.committer.date' 2>/dev/null) || RELEASE_DATE=""
+        [[ -n "$RELEASE_DATE" || "$ATTEMPT" -eq 3 ]] && break
+        sleep $((ATTEMPT * 2))
+      done
       ;;
     rubygems)
       # A hyphen in a lockfile version is always a platform suffix — RubyGems
       # spells prereleases with a dot — and the release endpoint takes the bare
       # version. built_at is unreliable (some releases carry 1980); created_at
       # is when the version was actually published.
-      RELEASE_DATE=$(curl -sf --max-time 30 --retry 3 --retry-all-errors "https://rubygems.org/api/v2/rubygems/${PACKAGE}/versions/${VERSION%%-*}.json" \
+      RELEASE_DATE=$(curl -sf --max-time 30 --retry 3 --retry-all-errors --retry-max-time 90 "https://rubygems.org/api/v2/rubygems/${PACKAGE}/versions/${VERSION%%-*}.json" \
                      | jq -r '.created_at // empty' 2>/dev/null || true)
       ;;
     npm)
-      RELEASE_DATE=$(curl -sf --max-time 30 --retry 3 --retry-all-errors "https://registry.npmjs.org/${PACKAGE/\//%2F}" \
+      RELEASE_DATE=$(curl -sf --max-time 30 --retry 3 --retry-all-errors --retry-max-time 90 "https://registry.npmjs.org/${PACKAGE/\//%2F}" \
                      | jq -r --arg version "$VERSION" '.time[$version] // empty' 2>/dev/null || true)
       ;;
     pub)
-      RELEASE_DATE=$(curl -sf --max-time 30 --retry 3 --retry-all-errors "https://pub.dev/api/packages/${PACKAGE}/versions/${VERSION}" \
+      RELEASE_DATE=$(curl -sf --max-time 30 --retry 3 --retry-all-errors --retry-max-time 90 "https://pub.dev/api/packages/${PACKAGE}/versions/${VERSION}" \
                      | jq -r '.published // empty' 2>/dev/null || true)
       ;;
     pypi)
-      RELEASE_DATE=$(curl -sfL --max-time 30 --retry 3 --retry-all-errors "https://pypi.org/pypi/${PACKAGE}/${VERSION}/json" \
+      RELEASE_DATE=$(curl -sfL --max-time 30 --retry 3 --retry-all-errors --retry-max-time 90 "https://pypi.org/pypi/${PACKAGE}/${VERSION}/json" \
                      | jq -r '[.urls[].upload_time_iso_8601] | min // empty' 2>/dev/null || true)
       ;;
     nuget)
       NUGET_PATH=$(echo "${PACKAGE}/${VERSION}" | tr '[:upper:]' '[:lower:]')
-      RELEASE_DATE=$(curl -sf --max-time 30 --retry 3 --retry-all-errors --compressed "https://api.nuget.org/v3/registration5-gz-semver2/${NUGET_PATH}.json" \
+      RELEASE_DATE=$(curl -sf --max-time 30 --retry 3 --retry-all-errors --retry-max-time 90 --compressed "https://api.nuget.org/v3/registration5-gz-semver2/${NUGET_PATH}.json" \
                      | jq -r '.published // empty' 2>/dev/null || true)
       ;;
   esac
