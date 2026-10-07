@@ -1,3 +1,9 @@
+## [Unreleased]
+
+### Added
+
+- `Layout/SingleLineStatementSpacing` coverage for RSpec cops that forbid consecutive one-liners
+
 ## [0.11.1] - 2026-10-07
 
 ### Fixed
