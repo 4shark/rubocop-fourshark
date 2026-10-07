@@ -61,12 +61,13 @@ Cop names follow RuboCop's empirical convention — a noun phrase describing the
 
 ### Stock cops disabled
 
-Where a 4Shark cop supersedes or contradicts a stock cop, `config/default.yml` turns the stock one off:
+Where a 4Shark cop supersedes or contradicts a stock cop, or a stock cop contradicts a 4Shark convention, `config/default.yml` turns the stock one off:
 
 | Disabled stock cop | Why |
 |---|---|
 | `Rails/Delegate` | contradicts `Style/DisallowDelegate` — it turns an explicit method into `delegate`, we forbid the macro |
 | `Rails/InverseOf` | superseded by `Rails/MandatoryInverseOf` (covers its cases and more) |
+| `RSpec/MultipleMemoizedHelpers` | contradicts the spec convention of keeping every `let` at the top level, which the cop's default `Max: 5` cannot hold |
 | `Style/MultilineTernaryOperator` | superseded by `Style/DisallowTernary` — it shapes a construct we forbid outright |
 | `Style/NestedTernaryOperator` | superseded by `Style/DisallowTernary` — same |
 | `Style/SafeNavigation` | contradicts `Style/DisallowSafeNavigation` — it pushes `&.`, we forbid it |
