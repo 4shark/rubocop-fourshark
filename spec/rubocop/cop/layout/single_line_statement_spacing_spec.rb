@@ -219,6 +219,66 @@ RSpec.describe RuboCop::Cop::Layout::SingleLineStatementSpacing, :config do
     RUBY
   end
 
+  it 'keeps the blank line after a hook written with a numbered parameter' do
+    expect_no_offenses(<<~RUBY)
+      around { _1.run }
+
+      it { is_expected.to be_valid }
+    RUBY
+  end
+
+  it 'keeps the blank line after a bare pending example' do
+    expect_no_offenses(<<~RUBY)
+      pending 'not ready'
+
+      let(:user) { build(:user) }
+    RUBY
+  end
+
+  it 'keeps the blank line between two subjects' do
+    expect_no_offenses(<<~RUBY)
+      subject(:user) { build(:user) }
+
+      subject(:admin) { build(:admin) }
+    RUBY
+  end
+
+  it 'keeps the blank line after a one-line example group' do
+    expect_no_offenses(<<~RUBY)
+      context('when empty') { it { is_expected.to be_empty } }
+
+      context('when full') { it { is_expected.to be_full } }
+    RUBY
+  end
+
+  it 'removes the blank line between two one-line hooks' do
+    expect_offense(<<~RUBY)
+      before { user.save }
+
+      before { admin.save }
+      ^^^^^^^^^^^^^^^^^^^^^ Remove the blank line between consecutive single-line statements.
+    RUBY
+
+    expect_correction(<<~RUBY)
+      before { user.save }
+      before { admin.save }
+    RUBY
+  end
+
+  it 'treats a receiver-qualified hook as an ordinary statement' do
+    expect_offense(<<~RUBY)
+      config.before { foo }
+
+      config.after { bar }
+      ^^^^^^^^^^^^^^^^^^^^ Remove the blank line between consecutive single-line statements.
+    RUBY
+
+    expect_correction(<<~RUBY)
+      config.before { foo }
+      config.after { bar }
+    RUBY
+  end
+
   it 'ignores a blank line between statements that carry a heredoc' do
     expect_no_offenses(<<~RUBY)
       foo(<<~TEXT)

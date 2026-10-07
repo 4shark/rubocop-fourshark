@@ -17,6 +17,7 @@ module RuboCop
         FLOW_CONTROL_METHODS = %i[raise fail throw].freeze
         FLOW_CONTROL_TYPES = %i[return next break redo retry].freeze
         MSG = 'Remove the blank line between consecutive single-line statements.'
+        ONE_LINER_RUN_COPS = { example: 'RSpec/EmptyLineAfterExample', hook: 'RSpec/EmptyLineAfterHook' }.freeze
 
         RSPEC_KINDS = {
           after: :hook,
@@ -24,8 +25,15 @@ module RuboCop
           append_before: :hook,
           around: :hook,
           before: :hook,
+          context: :example_group,
+          describe: :example_group,
           example: :example,
+          example_group: :example_group,
+          fcontext: :example_group,
+          fdescribe: :example_group,
+          feature: :example_group,
           fexample: :example,
+          ffeature: :example_group,
           fit: :example,
           focus: :example,
           fscenario: :example,
@@ -38,11 +46,17 @@ module RuboCop
           prepend_after: :hook,
           prepend_before: :hook,
           scenario: :example,
+          shared_context: :example_group,
+          shared_examples: :example_group,
+          shared_examples_for: :example_group,
           skip: :example,
           specify: :example,
           subject: :subject,
           subject!: :subject,
+          xcontext: :example_group,
+          xdescribe: :example_group,
           xexample: :example,
+          xfeature: :example_group,
           xit: :example,
           xscenario: :example,
           xspecify: :example
@@ -97,18 +111,31 @@ module RuboCop
         end
 
         # The `RSpec/EmptyLineAfter*` cops demand a blank after the last `let`,
-        # `subject`, hook or example of a run; removing it makes the two cops fight.
+        # `subject`, hook, example or example group of a run; removing it makes the two cops fight.
         def rspec_run_ends?(first, second)
           kind = rspec_kind(first)
 
           return false if kind.nil?
+          return true if kind != rspec_kind(second)
 
-          kind != rspec_kind(second)
+          !one_liner_run_allowed?(kind)
+        end
+
+        # Only `let`s always run together; hooks and examples do while their cop keeps
+        # `AllowConsecutiveOneLiners`, and subjects and example groups never do.
+        def one_liner_run_allowed?(kind)
+          return true if kind == :let
+
+          cop_name = ONE_LINER_RUN_COPS[kind]
+
+          return false if cop_name.nil?
+
+          config.for_cop(cop_name).fetch('AllowConsecutiveOneLiners', true)
         end
 
         def rspec_kind(node)
           call =
-            if node.block_type?
+            if node.any_block_type?
               node.send_node
             else
               node
