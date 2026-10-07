@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Changed
+
+- `RSpec/MultipleMemoizedHelpers` disabled
+
 ### Fixed
 
 - Dependency age check failing on a transient registry error
