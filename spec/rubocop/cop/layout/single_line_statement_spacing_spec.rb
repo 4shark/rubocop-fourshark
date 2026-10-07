@@ -151,6 +151,74 @@ RSpec.describe RuboCop::Cop::Layout::SingleLineStatementSpacing, :config do
     RUBY
   end
 
+  it 'keeps the blank line after the last let' do
+    expect_no_offenses(<<~RUBY)
+      let(:user) { build(:user) }
+
+      it { is_expected.to be_valid }
+    RUBY
+  end
+
+  it 'keeps the blank line after the last subject' do
+    expect_no_offenses(<<~RUBY)
+      subject(:user) { build(:user) }
+
+      it { is_expected.to be_valid }
+    RUBY
+  end
+
+  it 'keeps the blank line after a hook' do
+    expect_no_offenses(<<~RUBY)
+      before { user.role = :admin }
+
+      it { expect(user.admin?).to be(true) }
+    RUBY
+  end
+
+  it 'keeps the blank line after the last example' do
+    expect_no_offenses(<<~RUBY)
+      it { is_expected.to be_valid }
+
+      foo
+    RUBY
+  end
+
+  it 'removes the blank line between two lets' do
+    expect_offense(<<~RUBY)
+      let(:user) { build(:user) }
+
+      let(:admin) { build(:admin) }
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Remove the blank line between consecutive single-line statements.
+    RUBY
+
+    expect_correction(<<~RUBY)
+      let(:user) { build(:user) }
+      let(:admin) { build(:admin) }
+    RUBY
+  end
+
+  it 'removes the blank line between two one-line examples' do
+    expect_offense(<<~RUBY)
+      it { is_expected.to be_valid }
+
+      it { is_expected.to be_persisted }
+      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Remove the blank line between consecutive single-line statements.
+    RUBY
+
+    expect_correction(<<~RUBY)
+      it { is_expected.to be_valid }
+      it { is_expected.to be_persisted }
+    RUBY
+  end
+
+  it 'keeps the blank line that separates two gem sections' do
+    expect_no_offenses(<<~RUBY)
+      gem 'rails'
+
+      gem 'bootsnap'
+    RUBY
+  end
+
   it 'ignores a blank line between statements that carry a heredoc' do
     expect_no_offenses(<<~RUBY)
       foo(<<~TEXT)

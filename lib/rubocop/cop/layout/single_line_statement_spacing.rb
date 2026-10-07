@@ -8,8 +8,9 @@ module RuboCop
       # Forbids a blank line between two consecutive single-line statements —
       # they are one run, so the blank reveals nothing. A blank that separates
       # code from an adjacent comment is kept, as is one owned by another cop
-      # (a guard clause, a flow-control statement, an access modifier) or one
-      # beside a multi-line or heredoc neighbour. Autocorrects by removing it.
+      # (a guard clause, a flow-control statement, an access modifier, the end
+      # of an RSpec `let`/`subject`/hook/example run, a Bundler gem section) or
+      # one beside a multi-line or heredoc neighbour. Autocorrects by removing it.
       class SingleLineStatementSpacing < ::RuboCop::Cop::Base
         extend ::RuboCop::Cop::AutoCorrector
         ACCESS_MODIFIERS = %i[private protected public module_function].freeze
@@ -17,10 +18,41 @@ module RuboCop
         FLOW_CONTROL_TYPES = %i[return next break redo retry].freeze
         MSG = 'Remove the blank line between consecutive single-line statements.'
 
+        RSPEC_KINDS = {
+          after: :hook,
+          append_after: :hook,
+          append_before: :hook,
+          around: :hook,
+          before: :hook,
+          example: :example,
+          fexample: :example,
+          fit: :example,
+          focus: :example,
+          fscenario: :example,
+          fspecify: :example,
+          it: :example,
+          its: :example,
+          let: :let,
+          let!: :let,
+          pending: :example,
+          prepend_after: :hook,
+          prepend_before: :hook,
+          scenario: :example,
+          skip: :example,
+          specify: :example,
+          subject: :subject,
+          subject!: :subject,
+          xexample: :example,
+          xit: :example,
+          xscenario: :example,
+          xspecify: :example
+        }.freeze
+
         def on_begin(node)
           node.children.each_cons(2) do |first, second|
             next unless first.is_a?(::RuboCop::AST::Node) && second.is_a?(::RuboCop::AST::Node)
             next if structural?(first) || structural?(second)
+            next if rspec_run_ends?(first, second) || gem_section_boundary?(first, second)
 
             blanks = removable_blank_lines(first, second)
 
@@ -62,6 +94,38 @@ module RuboCop
 
         def access_modifier?(node)
           node.send_type? && node.receiver.nil? && ACCESS_MODIFIERS.include?(node.method_name)
+        end
+
+        # The `RSpec/EmptyLineAfter*` cops demand a blank after the last `let`,
+        # `subject`, hook or example of a run; removing it makes the two cops fight.
+        def rspec_run_ends?(first, second)
+          kind = rspec_kind(first)
+
+          return false if kind.nil?
+
+          kind != rspec_kind(second)
+        end
+
+        def rspec_kind(node)
+          call =
+            if node.block_type?
+              node.send_node
+            else
+              node
+            end
+
+          return nil if !call.send_type? || call.receiver
+
+          RSPEC_KINDS[call.method_name]
+        end
+
+        # `Bundler/OrderedGems` reads a blank between two `gem` lines as a section break.
+        def gem_section_boundary?(first, second)
+          gem_declaration?(first) && gem_declaration?(second)
+        end
+
+        def gem_declaration?(node)
+          node.send_type? && node.receiver.nil? && node.method?(:gem)
         end
 
         # A blank whose nearest non-blank line on each side is the same kind
