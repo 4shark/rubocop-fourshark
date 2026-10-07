@@ -4,6 +4,10 @@
 
 - `Layout/SingleLineStatementSpacing` coverage for RSpec cops that forbid consecutive one-liners
 
+### Fixed
+
+- `Layout/SingleLineStatementSpacing` — the blank line after a module inclusion or attribute accessor run is no longer removed
+
 ## [0.11.1] - 2026-10-07
 
 ### Fixed

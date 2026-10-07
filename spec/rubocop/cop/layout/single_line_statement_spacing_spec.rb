@@ -211,6 +211,50 @@ RSpec.describe RuboCop::Cop::Layout::SingleLineStatementSpacing, :config do
     RUBY
   end
 
+  it 'keeps the blank line after a module inclusion' do
+    expect_no_offenses(<<~RUBY)
+      include RescueUniqueConstraint
+
+      primary_abstract_class
+    RUBY
+  end
+
+  it 'removes the blank line between two module inclusions' do
+    expect_offense(<<~RUBY)
+      include Comparable
+
+      extend Forwardable
+      ^^^^^^^^^^^^^^^^^^ Remove the blank line between consecutive single-line statements.
+    RUBY
+
+    expect_correction(<<~RUBY)
+      include Comparable
+      extend Forwardable
+    RUBY
+  end
+
+  it 'keeps the blank line after an attribute accessor' do
+    expect_no_offenses(<<~RUBY)
+      attr_reader :name
+
+      validates :name, presence: true
+    RUBY
+  end
+
+  it 'removes the blank line between two attribute accessors' do
+    expect_offense(<<~RUBY)
+      attr_reader :name
+
+      attr_writer :email
+      ^^^^^^^^^^^^^^^^^^ Remove the blank line between consecutive single-line statements.
+    RUBY
+
+    expect_correction(<<~RUBY)
+      attr_reader :name
+      attr_writer :email
+    RUBY
+  end
+
   it 'keeps the blank line that separates two gem sections' do
     expect_no_offenses(<<~RUBY)
       gem 'rails'

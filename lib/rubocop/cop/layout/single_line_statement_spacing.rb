@@ -9,8 +9,9 @@ module RuboCop
       # they are one run, so the blank reveals nothing. A blank that separates
       # code from an adjacent comment is kept, as is one owned by another cop
       # (a guard clause, a flow-control statement, an access modifier, the end
-      # of an RSpec `let`/`subject`/hook/example run, a Bundler gem section) or
-      # one beside a multi-line or heredoc neighbour. Autocorrects by removing it.
+      # of an RSpec `let`/`subject`/hook/example run, the end of a module
+      # inclusion or attribute accessor run, a Bundler gem section) or one
+      # beside a multi-line or heredoc neighbour. Autocorrects by removing it.
       class SingleLineStatementSpacing < ::RuboCop::Cop::Base
         extend ::RuboCop::Cop::AutoCorrector
         ACCESS_MODIFIERS = %i[private protected public module_function].freeze
@@ -62,11 +63,22 @@ module RuboCop
           xspecify: :example
         }.freeze
 
+        STATEMENT_RUN_KINDS = {
+          attr: :attribute_accessor,
+          attr_accessor: :attribute_accessor,
+          attr_reader: :attribute_accessor,
+          attr_writer: :attribute_accessor,
+          extend: :module_inclusion,
+          include: :module_inclusion,
+          prepend: :module_inclusion
+        }.freeze
+
         def on_begin(node)
           node.children.each_cons(2) do |first, second|
             next unless first.is_a?(::RuboCop::AST::Node) && second.is_a?(::RuboCop::AST::Node)
             next if structural?(first) || structural?(second)
-            next if rspec_run_ends?(first, second) || gem_section_boundary?(first, second)
+            next if rspec_run_ends?(first, second) || statement_run_ends?(first, second)
+            next if gem_section_boundary?(first, second)
 
             blanks = removable_blank_lines(first, second)
 
@@ -144,6 +156,22 @@ module RuboCop
           return nil if !call.send_type? || call.receiver
 
           RSPEC_KINDS[call.method_name]
+        end
+
+        # `Layout/EmptyLinesAfterModuleInclusion` and `Layout/EmptyLinesAroundAttributeAccessor`
+        # demand a blank after the last `include`/`extend`/`prepend` or `attr_*` of a run.
+        def statement_run_ends?(first, second)
+          kind = statement_run_kind(first)
+
+          return false if kind.nil?
+
+          kind != statement_run_kind(second)
+        end
+
+        def statement_run_kind(node)
+          return nil if !node.send_type? || node.receiver
+
+          STATEMENT_RUN_KINDS[node.method_name]
         end
 
         # `Bundler/OrderedGems` reads a blank between two `gem` lines as a section break.
