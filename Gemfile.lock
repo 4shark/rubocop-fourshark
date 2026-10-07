@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    rubocop-fourshark (0.11.2)
+    rubocop-fourshark (0.12.0)
       lint_roller (~> 1.1)
       rubocop (>= 1.87)
       rubocop-factory_bot
@@ -186,7 +186,7 @@ CHECKSUMS
   rubocop (1.91.0) sha256=9c82b7bf391c5d7e3798c5b9996e22a1fe3bd7468e351dfdeb96140c058296d0
   rubocop-ast (1.50.0) sha256=b9ca88300da0803ee222ad20cdb30494c0a784eed06fdc35d254b06d662788db
   rubocop-factory_bot (2.28.0) sha256=4b17fc02124444173317e131759d195b0d762844a71a29fe8139c1105d92f0cb
-  rubocop-fourshark (0.11.2)
+  rubocop-fourshark (0.12.0)
   rubocop-graphql (1.6.0) sha256=60778e77cbb8384fff9795890d5e8012e82100c356ce15275a599ad341a728ce
   rubocop-performance (1.26.1) sha256=cd19b936ff196df85829d264b522fd4f98b6c89ad271fa52744a8c11b8f71834
   rubocop-rails (2.35.3) sha256=6edd45410866912b9b2e90ae3aeafd31d576df2bb2a9c9408f1667a50c32c7de

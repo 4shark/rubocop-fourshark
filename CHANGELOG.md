@@ -1,4 +1,8 @@
-## [Unreleased]
+## [0.12.0] - 2026-10-07
+
+### Changed
+
+- Bump Dependencies
 
 ### Fixed
 
