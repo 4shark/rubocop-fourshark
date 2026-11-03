@@ -4,6 +4,10 @@
 
 - Development Ruby version to 4.0.7
 
+### Security
+
+- rack vulnerabilities (GHSA-2j8w-xcrc-x985, GHSA-5v64-555j-wjxm, GHSA-p8x9-v4hv-2w4g, GHSA-wvg4-6p58-3gh3)
+
 ## [0.12.0] - 2026-10-07
 
 ### Changed
