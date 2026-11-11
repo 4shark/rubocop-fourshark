@@ -1,5 +1,9 @@
 ## [Unreleased]
 
+### Added
+
+- Worktree setup file
+
 ### Changed
 
 - Development Ruby version to 4.0.7
