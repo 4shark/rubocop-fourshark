@@ -3,6 +3,7 @@
 ### Changed
 
 - Development Ruby version to 4.0.7
+- Claude Code directory excluded from version control
 
 ### Security
 
