@@ -8,6 +8,7 @@
 
 - Development Ruby version to 4.0.7
 - Claude Code directory excluded from version control
+- Dependency pull requests keeping the version they opened with
 
 ### Security
 

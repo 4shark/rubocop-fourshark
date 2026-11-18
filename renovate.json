@@ -8,6 +8,7 @@
   "prConcurrentLimit": 0,
   "prHourlyLimit": 0,
   "rangeStrategy": "pin",
+  "rebaseWhen": "never",
   "packageRules": [
     {
       "description": "Pin and pinDigest updates bypass minimumReleaseAge",
