@@ -6,7 +6,7 @@
 
 ### Changed
 
-- Development Ruby version to 4.0.7
+- Development Ruby version to 4.0.10
 - Claude Code directory excluded from version control
 - Dependency pull requests keeping the version they opened with
 
