@@ -54,9 +54,6 @@ jobs:
           # requires. A copy of that condition here drifts and strands PRs.
           while IFS=$'\t' read -r PR_NUMBER COMMIT_SHA BRANCH; do
             echo "::group::PR #${PR_NUMBER} (${BRANCH} @ ${COMMIT_SHA})"
-            git fetch --depth=1 "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$COMMIT_SHA" 2>/dev/null || { echo "Skipping PR #${PR_NUMBER} — could not fetch ${COMMIT_SHA}"; echo "::endgroup::"; continue; }
-            git checkout "$COMMIT_SHA" -- .github 2>/dev/null || { echo "Skipping PR #${PR_NUMBER} — .github not reachable on this commit"; echo "::endgroup::"; continue; }
             COMMIT_SHA="$COMMIT_SHA" PR_NUMBER="$PR_NUMBER" GH_TOKEN="$GH_TOKEN" NOTIFY_HANDLE="$NOTIFY_HANDLE" MIN_AGE_DAYS="$MIN_AGE_DAYS" .github/scripts/verify-minimum-age.sh || echo "::warning::verify script exited non-zero for PR #${PR_NUMBER}"
-            git checkout HEAD -- .github
             echo "::endgroup::"
           done <<< "$PRS"

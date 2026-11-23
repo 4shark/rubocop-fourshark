@@ -9,6 +9,11 @@
 - Development Ruby version to 4.0.10
 - Claude Code directory excluded from version control
 - Dependency pull requests keeping the version they opened with
+- Minimum release age check accepting security fixes
+
+### Fixed
+
+- Dependency age check blocking pull requests on action pins they do not add
 
 ### Security
 

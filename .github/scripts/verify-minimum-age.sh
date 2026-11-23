@@ -9,16 +9,19 @@
 # discussion #39781), and every version a resolver writes into a lockfile
 # beyond the declared one — the transitive dependencies.
 #
-#   GitHub Actions  every SHA pin under .github/workflows and .github/actions
+#   GitHub Actions  SHA pins under .github/workflows and .github/actions
 #   RubyGems        Gemfile.lock, GEM section only (PATH and GIT have no release)
 #   npm             yarn.lock, Yarn Classic and Berry, registry entries only
 #   pub.dev         pubspec.lock, hosted packages only
 #   PyPI            requirements*.txt, exact == pins
 #   NuGet           *.csproj and Directory.Packages.props, exact versions
 #
-# A manifest or lockfile is compared between the merge base and the head, so
-# only the versions this pull request adds are aged — a dependency that has
-# sat at its version for a year is not re-verified on every unrelated PR.
+# A workflow, manifest or lockfile is compared between the merge base and the
+# head, so only the pins and versions this pull request adds are aged — a
+# dependency that has sat at its version for a year is not re-verified on every
+# unrelated PR.
+# A younger gem version passes only when ruby-advisory-db shows it patches an
+# advisory affecting the version it replaces.
 #
 # State semantics (consistent with Renovate stability-days):
 #   pending — at least one version under MIN_AGE_DAYS; merge blocked
@@ -51,12 +54,15 @@ DEPENDENCY_FILE_PATTERN='^(\.github/(workflows|actions)/|(.*/)?(Gemfile\.lock|ya
 : "${NOTIFY_HANDLE:?NOTIFY_HANDLE is required}"
 : "${MIN_AGE_DAYS:?DEPENDENCY_MINIMUM_RELEASE_AGE_DAYS is required}"
 
-# Prints one "name<TAB>version" line per registry release the file pins.
+# Prints one "name<TAB>version" line per registry release or action pin the file holds.
 list_versions() {
   local ecosystem="$1"
   local file="$2"
 
   case "$ecosystem" in
+    action)
+      sed -nE 's/^[[:space:]]*-?[[:space:]]*uses:[[:space:]]+([^.\/][^@[:space:]]+)@([0-9a-f]{40}).*$/\1\t\2/p' "$file"
+      ;;
     rubygems)
       awk '
         /^[A-Z]/ { in_gem_section = ($0 == "GEM") }
@@ -89,10 +95,37 @@ list_versions() {
   esac
 }
 
+# Succeeds when an advisory in ruby-advisory-db affects the replaced version
+# and not the added one. Requirements are read the way bundler-audit reads them.
+patches_rubygems_advisory() {
+  local package="$1"
+  local replaced_version="${2%%-*}"
+  local added_version="${3%%-*}"
+  local advisory_urls
+
+  advisory_urls=$(gh api "repos/rubysec/ruby-advisory-db/contents/gems/${package}" --jq '.[].download_url' 2>/dev/null) || return 1
+
+  while IFS= read -r advisory_url; do
+    [[ -n "$advisory_url" ]] || continue
+
+    if curl -sf --max-time 30 --retry 3 --retry-all-errors --retry-max-time 90 "$advisory_url" | ruby -ryaml -rdate -e '
+      advisory = YAML.safe_load($stdin.read, permitted_classes: [Date])
+      requirements = lambda { |key| Array(advisory[key]).map { |requirement| Gem::Requirement.new(*requirement.split(", ")) } }
+      safe_requirements = requirements.call("patched_versions") + requirements.call("unaffected_versions")
+      vulnerable = lambda { |version| safe_requirements.none? { |requirement| requirement.satisfied_by?(Gem::Version.new(version)) } }
+      exit(vulnerable.call(ARGV[0]) && !vulnerable.call(ARGV[1]))
+    ' "$replaced_version" "$added_version"; then
+      return 0
+    fi
+  done <<< "$advisory_urls"
+
+  return 1
+}
+
 # --paginate prints the pages it fetched before failing on a later one, so only the
 # exit status tells a truncated list from a complete one.
 if ! PR_FILES=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --paginate \
-                  --jq '.[] | "\(.status)\t\(.filename)\t\(.previous_filename // .filename)\t\(.patch // "" | test("(?m)^\\+.*uses:\\s+[^.\\/][^@\\s]+@[0-9a-f]{40}"))"' 2>/dev/null); then
+                  --jq '.[] | "\(.status)\t\(.filename)\t\(.previous_filename // .filename)"' 2>/dev/null); then
   PR_FILES=""
 fi
 
@@ -123,27 +156,13 @@ fi
 NOW=$(date -u +%s)
 THRESHOLD_SECONDS=$((MIN_AGE_DAYS * 86400))
 
-WORKFLOWS_DIR=".github/workflows"
-ACTIONS_DIR=".github/actions"
-
 TOTAL=0
 NEW_VERSIONS=0
 VIOLATIONS=0
+SECURITY_EXEMPTIONS=0
 ERRORS=0
 MIN_AGE_FOUND=999999
 DEPENDENCIES=""
-
-if [[ -d "$WORKFLOWS_DIR" || -d "$ACTIONS_DIR" ]]; then
-  PINS=$(grep -rhE "^[[:space:]]*-?[[:space:]]*uses:[[:space:]]+[^.\/][^@[:space:]]+@[0-9a-f]{40}" \
-           "$WORKFLOWS_DIR" "$ACTIONS_DIR" 2>/dev/null \
-         | sed -E 's/.*uses:[[:space:]]+([^@[:space:]]+)@([0-9a-f]{40}).*/\1@\2/' \
-         | sort -u || true)
-
-  while IFS='@' read -r ACTION SHA; do
-    [[ -z "$ACTION" || -z "$SHA" ]] && continue
-    DEPENDENCIES+="action"$'\t'"${ACTION}"$'\t'"${SHA}"$'\n'
-  done <<< "$PINS"
-fi
 
 # gh api writes the error body to stdout, so a failed call has to leave the value empty rather than keep that body.
 BASE_REF=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.base.ref' 2>/dev/null) || BASE_REF=""
@@ -159,16 +178,11 @@ HEAD_CONTENT_FILE=$(mktemp)
 BASE_CONTENT_FILE=$(mktemp)
 trap 'rm -f "$HEAD_CONTENT_FILE" "$BASE_CONTENT_FILE"' EXIT
 
-while IFS=$'\t' read -r FILE_STATUS FILE_PATH PREVIOUS_PATH ADDS_ACTION_PIN; do
+while IFS=$'\t' read -r FILE_STATUS FILE_PATH PREVIOUS_PATH; do
   [[ -z "$FILE_PATH" || "$FILE_STATUS" == "removed" ]] && continue
 
   case "$FILE_PATH" in
-    .github/workflows/* | .github/actions/*)
-      if [[ "$ADDS_ACTION_PIN" == "true" ]]; then
-        NEW_VERSIONS=$((NEW_VERSIONS + 1))
-      fi
-      continue
-      ;;
+    .github/workflows/* | .github/actions/*) ECOSYSTEM="action" ;;
     Gemfile.lock | */Gemfile.lock) ECOSYSTEM="rubygems" ;;
     yarn.lock | */yarn.lock) ECOSYSTEM="npm" ;;
     pubspec.lock | */pubspec.lock) ECOSYSTEM="pub" ;;
@@ -195,18 +209,20 @@ while IFS=$'\t' read -r FILE_STATUS FILE_PATH PREVIOUS_PATH ADDS_ACTION_PIN; do
     continue
   fi
 
-  ADDED_VERSIONS=$(comm -13 <(list_versions "$ECOSYSTEM" "$BASE_CONTENT_FILE" | sort -u) <(list_versions "$ECOSYSTEM" "$HEAD_CONTENT_FILE" | sort -u))
+  BASE_VERSIONS=$(list_versions "$ECOSYSTEM" "$BASE_CONTENT_FILE" | sort -u)
+  ADDED_VERSIONS=$(comm -13 <(printf '%s\n' "$BASE_VERSIONS") <(list_versions "$ECOSYSTEM" "$HEAD_CONTENT_FILE" | sort -u))
 
   while IFS=$'\t' read -r PACKAGE VERSION; do
     [[ -z "$PACKAGE" || -z "$VERSION" ]] && continue
     NEW_VERSIONS=$((NEW_VERSIONS + 1))
-    DEPENDENCIES+="${ECOSYSTEM}"$'\t'"${PACKAGE}"$'\t'"${VERSION}"$'\n'
+    REPLACED_VERSION=$(awk -F'\t' -v package="$PACKAGE" '$1 == package { print $2; exit }' <<< "$BASE_VERSIONS")
+    DEPENDENCIES+="${ECOSYSTEM}"$'\t'"${PACKAGE}"$'\t'"${VERSION}"$'\t'"${REPLACED_VERSION}"$'\n'
   done <<< "$ADDED_VERSIONS"
 done <<< "$PR_FILES"
 
 UNIQUE_DEPENDENCIES=$(printf '%s' "$DEPENDENCIES" | sort -u)
 
-while IFS=$'\t' read -r ECOSYSTEM PACKAGE VERSION; do
+while IFS=$'\t' read -r ECOSYSTEM PACKAGE VERSION REPLACED_VERSION; do
   [[ -z "$ECOSYSTEM" ]] && continue
   TOTAL=$((TOTAL + 1))
 
@@ -269,8 +285,13 @@ while IFS=$'\t' read -r ECOSYSTEM PACKAGE VERSION; do
   fi
 
   if [[ "$AGE_SECONDS" -lt "$THRESHOLD_SECONDS" ]]; then
-    echo "::warning::${PACKAGE} ${VERSION} (${ECOSYSTEM}) — ${AGE_DAYS} days old (released ${RELEASE_DATE}); minimum is ${MIN_AGE_DAYS} days"
-    VIOLATIONS=$((VIOLATIONS + 1))
+    if [[ "$ECOSYSTEM" == "rubygems" && -n "$REPLACED_VERSION" ]] && patches_rubygems_advisory "$PACKAGE" "$REPLACED_VERSION" "$VERSION"; then
+      echo "::notice::${PACKAGE} ${VERSION} (${ECOSYSTEM}) — ${AGE_DAYS} days old, accepted because it patches an advisory affecting ${REPLACED_VERSION}"
+      SECURITY_EXEMPTIONS=$((SECURITY_EXEMPTIONS + 1))
+    else
+      echo "::warning::${PACKAGE} ${VERSION} (${ECOSYSTEM}) — ${AGE_DAYS} days old (released ${RELEASE_DATE}); minimum is ${MIN_AGE_DAYS} days"
+      VIOLATIONS=$((VIOLATIONS + 1))
+    fi
   fi
 done <<< "$UNIQUE_DEPENDENCIES"
 
@@ -286,6 +307,9 @@ elif [[ "$TOTAL" -eq 0 ]]; then
 elif [[ "$VIOLATIONS" -gt 0 ]]; then
   STATE="pending"
   DESCRIPTION="${VIOLATIONS}/${TOTAL} dependency/dependencies under ${MIN_AGE_DAYS}-day cooldown; youngest is ${MIN_AGE_FOUND} days old"
+elif [[ "$SECURITY_EXEMPTIONS" -gt 0 ]]; then
+  STATE="success"
+  DESCRIPTION="All ${TOTAL} dependency/dependencies at or above ${MIN_AGE_DAYS} days, except ${SECURITY_EXEMPTIONS} that patch a security advisory"
 else
   STATE="success"
   DESCRIPTION="All ${TOTAL} dependency/dependencies at or above ${MIN_AGE_DAYS} days"
