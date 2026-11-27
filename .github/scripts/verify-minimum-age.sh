@@ -123,19 +123,31 @@ patches_rubygems_advisory() {
 }
 
 # --paginate prints the pages it fetched before failing on a later one, so only the
-# exit status tells a truncated list from a complete one.
-if ! PR_FILES=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --paginate \
-                  --jq '.[] | "\(.status)\t\(.filename)\t\(.previous_filename // .filename)"' 2>/dev/null); then
-  PR_FILES=""
-fi
+# exit status tells a truncated list from a complete one. A pull request always
+# changes at least one file, so an empty list means the read failed.
+PR_FILES_MAXIMUM_ATTEMPTS=5
+PR_FILES_TIMEOUT_SECONDS=60
+PR_FILES_ERROR_FILE=$(mktemp)
 
-# A pull request always changes at least one file, so an empty list means the read failed.
+for ATTEMPT in $(seq 1 "$PR_FILES_MAXIMUM_ATTEMPTS"); do
+  if ! PR_FILES=$(timeout "$PR_FILES_TIMEOUT_SECONDS" gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}/files" --paginate \
+                    --jq '.[] | "\(.status)\t\(.filename)\t\(.previous_filename // .filename)"' 2>"$PR_FILES_ERROR_FILE"); then
+    PR_FILES=""
+  fi
+  [[ -n "$PR_FILES" || "$ATTEMPT" -eq "$PR_FILES_MAXIMUM_ATTEMPTS" ]] && break
+  sleep $((ATTEMPT * 3))
+done
+
+PR_FILES_ERROR=$(tr '\n' ' ' < "$PR_FILES_ERROR_FILE")
+rm -f "$PR_FILES_ERROR_FILE"
+
 if [[ -z "$PR_FILES" ]]; then
+  PR_FILES_ERROR="${PR_FILES_ERROR:-no error output: an empty list, or no answer within ${PR_FILES_TIMEOUT_SECONDS} seconds}"
   gh api -X POST "repos/${GITHUB_REPOSITORY}/statuses/${COMMIT_SHA}" \
     -f state="error" \
     -f context="$STATUS_CONTEXT" \
     -f description="Could not read the pull request file list" >/dev/null
-  echo "::error::could not read the file list of PR #${PR_NUMBER}"
+  echo "::error::could not read the file list of PR #${PR_NUMBER} after ${ATTEMPT} attempts: ${PR_FILES_ERROR}"
   exit 0
 fi
 

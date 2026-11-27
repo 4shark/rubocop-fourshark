@@ -14,6 +14,7 @@
 ### Fixed
 
 - Dependency age check blocking pull requests on action pins they do not add
+- Dependency age check failing on a temporary GitHub error
 
 ### Security
 
